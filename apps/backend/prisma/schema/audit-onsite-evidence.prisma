@@ -193,8 +193,10 @@ model FarmAuditPhoto {
   // writer never sets one, so this FK is required, mirroring
   // AuditChecklist.organizationId exactly.
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([auditId])
+  @@index([organizationId])
   @@index([attachmentId])
   @@index([checklistItemId])
   @@index([uploadedBy])
@@ -234,7 +236,9 @@ model GpsVerificationLog {
   // FarmAuditPhoto.organizationId exactly. No soft-delete fields:
   // append-only evidence, matching both sibling models in this file.
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([entityType, entityId])
+  @@index([organizationId])
   @@map("gps_verification_logs")
 }

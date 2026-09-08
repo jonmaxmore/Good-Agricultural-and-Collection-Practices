@@ -27,6 +27,7 @@ model Application {
   // (tenant-prisma-extension ANDs entityId) makes the app invisible to its own owner
   // (unhealable orphan). Restrict blocks deleting an Entity that still owns apps —
   // archive them first. Existing FK values are valid; entityId is never re-nulled.
+  entity      Entity? @relation(fields: [entityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   submitterId String?
   submitter   User?   @relation("ApplicationSubmitter", fields: [submitterId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
@@ -225,8 +226,10 @@ model Application {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([healthId])
+  @@index([entityId])
   @@index([submitterId])
   @@index([bundleId])
   @@index([status])
@@ -236,6 +239,7 @@ model Application {
   @@index([headAuditorId])
   @@index([schedulerId])
   @@index([auditorId])
+  @@index([organizationId])
   // Phase 2 #2.8: rejectCount drives the analytics badge "submission #N"
   // (apps/backend/routes/api/provider/applications.js:160) and is read on
   // every provider list. Without this index, large reject counts would
@@ -273,10 +277,12 @@ model ApplicationComment {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([applicationId])
   @@index([authorId])
   @@index([isDeleted])
+  @@index([organizationId])
   @@map("application_comments")
 }
 
@@ -314,10 +320,12 @@ model ApplicationDraft {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@unique([userId, status])
   @@index([userId])
   @@index([isDeleted])
+  @@index([organizationId])
   @@map("application_drafts")
 }
 
@@ -341,8 +349,10 @@ model ApplicationBundle {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([healthId])
   @@index([isDeleted])
+  @@index([organizationId])
   @@map("application_bundles")
 }

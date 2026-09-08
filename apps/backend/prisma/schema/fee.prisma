@@ -8,8 +8,11 @@
 /// เมื่อไร จำนวนเท่าไร และอ้างอิงอะไร** — คำขอเดินต่อไม่ได้ถ้าไม่มีแถวนี้ และแถวนี้
 /// ชี้ตัวคนที่ต้องรับผิดชอบได้เสมอ · ไม่มีใครลบได้ (ไม่มี soft delete โดยตั้งใจ)
 model FeePayment {
-  id            String   @id @default(uuid()) @db.Uuid
-  applicationId String   @db.Uuid
+  // ชนิดต้องตรงกับ Application.id และ User.id ซึ่งเป็น text ไม่ใช่ uuid ในสคีมานี้
+  // ประกาศเป็น @db.Uuid ครั้งแรกแล้ว prisma validate ผ่าน แต่ Postgres ปฏิเสธ FK
+  // ตอน migrate จริง — ตัวตรวจสคีมาไม่ได้เทียบชนิดข้ามตาราง
+  id            String   @id @default(uuid())
+  applicationId String
 
   /// PHASE_1 = ค่าตรวจเอกสาร · PHASE_2 = ค่าตรวจแปลง
   /// เป็น String ไม่ใช่ enum เพราะทั้งระบบใช้ String กับ vocabulary อื่นเหมือนกัน
@@ -28,7 +31,7 @@ model FeePayment {
   note String?
 
   /// เจ้าหน้าที่ผู้ยืนยัน — ไม่ใช่ผู้จ่าย
-  confirmedById String   @db.Uuid
+  confirmedById String
   confirmedAt   DateTime @default(now())
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)

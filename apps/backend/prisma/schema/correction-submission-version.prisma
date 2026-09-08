@@ -53,6 +53,7 @@ model CorrectionSubmissionVersion {
   // Tenancy (ADR-014) — stamped explicitly from the CorrectionRound's tenant
   // (transaction clients bypass the tenant extension; M1/M3 letter idiom).
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   // Append-only: exactly ONE immutable row per (app, stage, round) — a re-write
   // of the same round is a DB-level conflict, not an overwrite.

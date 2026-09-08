@@ -1,0 +1,133 @@
+Route (app)                                         Size  First Load JS    
+┌ ○ /                                              194 B         102 kB
+├ ○ /_not-found                                    194 B         102 kB
+├ ○ /about                                         186 B         106 kB
+├ ○ /accessibility                                3.9 kB         177 kB
+├ ƒ /admin/applications/[id]/force-status        3.49 kB         140 kB
+├ ○ /admin/audit-log                             4.79 kB         138 kB
+├ ○ /admin/certificates                           4.8 kB         135 kB
+├ ƒ /admin/certificates/[id]                     10.1 kB         153 kB
+├ ○ /admin/communication                         6.35 kB         225 kB
+├ ○ /admin/dashboard                             7.78 kB         226 kB
+├ ○ /admin/planting                              6.34 kB         228 kB
+├ ƒ /admin/planting/[id]                         6.37 kB         225 kB
+├ ○ /admin/settings                              6.89 kB         225 kB
+├ ○ /admin/users                                 4.13 kB         140 kB
+├ ƒ /api/[...path]                                 194 B         102 kB
+├ ƒ /api/auth/change-password                      194 B         102 kB
+├ ƒ /api/auth/health                               194 B         102 kB
+├ ƒ /api/auth/health/[...path]                     194 B         102 kB
+├ ƒ /api/auth/provider/[...path]                   194 B         102 kB
+├ ƒ /api/session/clear-cookie                      194 B         102 kB
+├ ƒ /api/session/set-cookie                        194 B         102 kB
+├ ƒ /api/webapp-version                            194 B         102 kB
+├ ○ /apple-icon.png                                  0 B            0 B
+├ ○ /auth                                        6.25 kB         126 kB
+├ ○ /auth/clear-session                            813 B         103 kB
+├ ƒ /auth/health/login                           5.25 kB         216 kB
+├ ƒ /auth/health/privacy                         1.13 kB         171 kB
+├ ƒ /auth/health/terms                           1.13 kB         171 kB
+├ ƒ /auth/provider/login                         6.11 kB         181 kB
+├ ○ /forgot-password                             4.52 kB         174 kB
+├ ƒ /health                                        194 B         102 kB
+├ ○ /health/account/erasure                      10.4 kB         238 kB
+├ ƒ /health/applications                         8.35 kB         227 kB
+├ ƒ /health/applications/[id]                    14.8 kB         234 kB
+├ ƒ /health/applications/[id]/audit-notes        3.37 kB         122 kB
+├ ƒ /health/applications/[id]/car                7.29 kB         196 kB
+├ ƒ /health/applications/[id]/edit               6.03 kB         143 kB
+├ ƒ /health/applications/[id]/preview            8.11 kB         133 kB
+├ ƒ /health/applications/[id]/revision           4.86 kB         124 kB
+├ ƒ /health/applications/new                       194 B         102 kB
+├ ƒ /health/applications/new/step/[id]           29.9 kB         287 kB
+├ ƒ /health/applications/new/step/11               194 B         102 kB
+├ ƒ /health/applications/preview                 6.66 kB         136 kB
+├ ƒ /health/applications/renewal                 4.84 kB         183 kB
+├ ○ /health/certificates                         8.44 kB         277 kB
+├ ƒ /health/certificates/[id]                    4.04 kB         140 kB
+├ ○ /health/dashboard                              194 B         102 kB
+├ ○ /health/documents                            3.31 kB         222 kB
+├ ƒ /health/documents/[id]                          4 kB         125 kB
+├ ○ /health/home                                 4.28 kB         131 kB
+├ ○ /health/more                                 4.21 kB         223 kB
+├ ○ /health/notifications                        2.52 kB         228 kB
+├ ○ /health/onboarding                           4.58 kB         119 kB
+├ ○ /health/payments                              3.8 kB         125 kB
+├ ○ /health/profile                              6.65 kB         226 kB
+├ ○ /health/profile/notifications                 1.3 kB         135 kB
+├ ○ /health/profile/privacy                      6.81 kB         235 kB
+├ ○ /health/profile/security                     7.89 kB         236 kB
+├ ○ /health/reports                              8.67 kB         276 kB
+├ ○ /health/settings                             8.41 kB         227 kB
+├ ○ /health/start                                4.89 kB         263 kB
+├ ○ /health/start/readiness                       4.9 kB         263 kB
+├ ○ /health/status                               7.21 kB         129 kB
+├ ○ /health/training                             5.13 kB         170 kB
+├ ○ /help                                        1.93 kB         115 kB
+├ ○ /help/contact                                1.75 kB         107 kB
+├ ○ /help/faq                                    3.55 kB         181 kB
+├ ○ /help/glossary                                 925 B         170 kB
+├ ○ /login                                         194 B         102 kB
+├ ○ /opengraph-image.png                             0 B            0 B
+├ ○ /pricing                                       186 B         106 kB
+├ ƒ /privacy                                     1.13 kB         171 kB
+├ ○ /privacy-policy                                186 B         106 kB
+├ ƒ /provider                                      194 B         102 kB
+├ ○ /provider/analytics                          9.29 kB         252 kB
+├ ○ /provider/analytics/work                     5.05 kB         275 kB
+├ ○ /provider/applications                       8.54 kB         247 kB
+├ ƒ /provider/applications/[id]                  30.7 kB         296 kB
+├ ƒ /provider/applications/[id]/print            9.57 kB         128 kB
+├ ○ /provider/audits                             6.13 kB         260 kB
+├ ƒ /provider/audits/[id]                        38.4 kB         291 kB
+├ ƒ /provider/audits/[id]/inspect                9.86 kB         141 kB
+├ ƒ /provider/calendar                           13.2 kB         268 kB
+├ ○ /provider/certificates                       6.22 kB         245 kB
+├ ○ /provider/criteria                           3.44 kB         176 kB
+├ ○ /provider/dashboard                          5.55 kB         369 kB
+├ ƒ /provider/dashboard/admin                      194 B         102 kB
+├ ○ /provider/home                               3.27 kB         239 kB
+├ ○ /provider/login                                194 B         102 kB
+├ ○ /provider/management                         8.89 kB         269 kB
+├ ƒ /provider/management/users/[id]/groups       4.29 kB         275 kB
+├ ƒ /provider/management/users/[id]/permissions  5.85 kB         251 kB
+├ ○ /provider/notifications                      2.47 kB         228 kB
+├ ○ /provider/profile                            4.58 kB         243 kB
+├ ○ /provider/profile/notifications              2.29 kB         251 kB
+├ ○ /provider/profile/security                   7.18 kB         262 kB
+├ ○ /provider/reviewer                           4.84 kB         368 kB
+├ ƒ /provider/reviewer/[id]/document-check       8.62 kB         140 kB
+├ ○ /provider/scheduler/queue                    9.27 kB         154 kB
+├ ○ /provider/scheduler/reassign                 2.69 kB         263 kB
+├ ○ /provider/scheduler/reviewer-reassign        2.37 kB         263 kB
+├ ○ /provider/scheduler/workload                 7.65 kB         260 kB
+├ ○ /provider/settings                             194 B         102 kB
+├ ○ /provider/settings/system                    4.16 kB         272 kB
+├ ○ /provider/settings/work-config               5.88 kB         276 kB
+├ ○ /provider/standards                           5.2 kB         238 kB
+├ ○ /provider/standards/asean                    1.73 kB         251 kB
+├ ○ /provider/standards/thai-fda                   928 B         251 kB
+├ ○ /provider/standards/who                        729 B         250 kB
+├ ○ /provider/work                               6.39 kB         258 kB
+├ ƒ /provider/work/[id]                          9.46 kB         255 kB
+├ ○ /register                                    6.41 kB         212 kB
+├ ○ /register/success                            3.98 kB         174 kB
+├ ○ /robots.txt                                    194 B         102 kB
+├ ○ /sitemap.xml                                   194 B         102 kB
+├ ƒ /terms                                       1.13 kB         171 kB
+├ ○ /terms-of-service                              186 B         106 kB
+├ ○ /verify                                      2.43 kB         112 kB
+├ ƒ /verify/[cert-number]                          658 B         115 kB
+└ ƒ /verify/[cert-number]/revision/[n]             166 B         106 kB
++ First Load JS shared by all                     102 kB
+  ├ chunks/4103-b7c64674c529bb18.js              46.1 kB
+  ├ chunks/4f9f1ad2-edad3e29f75e4039.js          54.2 kB
+  └ other shared chunks (total)                  1.97 kB
+
+
+ƒ Middleware                                     34.5 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+EXIT=0

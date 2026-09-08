@@ -28,7 +28,7 @@ COPY packages ./packages
 COPY apps/backend ./apps/backend
 
 # Install only backend + its workspace dependencies (not frontend/web-app)
-RUN pnpm install --frozen-lockfile --ignore-scripts --filter=gacp-backend...
+RUN pnpm install --frozen-lockfile --ignore-scripts --filter=gacp-lite-backend...
 
 # Generate Prisma Client (inside backend folder)
 WORKDIR /app/apps/backend

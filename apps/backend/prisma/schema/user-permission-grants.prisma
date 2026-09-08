@@ -32,8 +32,10 @@ model UserPermissionGrant {
   // like UserGroupMembership.organizationId. Application code keeps it in
   // sync when a user moves tenants (rare); the user row is source of truth.
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@id([userId, permission])
   @@index([userId])
+  @@index([organizationId])
   @@map("user_permission_grants")
 }

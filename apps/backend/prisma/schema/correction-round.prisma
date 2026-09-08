@@ -44,8 +44,10 @@ model CorrectionRound {
   // Tenancy (ADR-014) — stamped explicitly by decision-letter-service
   // (transaction clients bypass the tenant extension; M1 letter idiom).
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@unique([applicationId, stage, roundNo])
   @@index([applicationId, stage])
+  @@index([organizationId])
   @@map("correction_rounds")
 }

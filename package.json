@@ -1,0 +1,25 @@
+{
+  "name": "gacp-lite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GACP Lite — ระบบยื่นขอและออกใบรับรอง GACP (standalone)",
+  "scripts": {
+    "dev": "concurrently -n api,web -c green,cyan \"pnpm --filter gacp-lite-backend dev\" \"pnpm --filter gacp-lite-web dev\"",
+    "build": "pnpm --filter gacp-lite-backend prisma:generate && pnpm --filter gacp-lite-web build",
+    "start": "concurrently -n api,web -c green,cyan \"pnpm --filter gacp-lite-backend start\" \"pnpm --filter gacp-lite-web start\"",
+    "db:generate": "pnpm --filter gacp-lite-backend prisma:generate",
+    "db:migrate": "pnpm --filter gacp-lite-backend exec prisma migrate deploy --schema prisma/schema",
+    "db:migrate:dev": "pnpm --filter gacp-lite-backend exec prisma migrate dev --schema prisma/schema",
+    "db:seed": "pnpm --filter gacp-lite-backend exec node prisma/seed-all.js",
+    "typecheck": "pnpm --filter gacp-lite-web exec tsc --noEmit",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -21,6 +21,7 @@ model Farm {
   // NULLs entityId when an Entity is deleted → the null-intolerant read-scope makes
   // the farm invisible to its own owner. Restrict blocks deleting an Entity that still
   // owns farms — archive them first. Existing FK values are valid; never re-nulled.
+  entity   Entity? @relation(fields: [entityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   // Farm Info
   farmName    String
@@ -88,11 +89,14 @@ model Farm {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([ownerId])
+  @@index([entityId])
   @@index([status])
   @@index([province])
   @@index([isDeleted])
+  @@index([organizationId])
   @@map("farms")
 }
 
@@ -149,9 +153,11 @@ model SiteAnalysis {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([farmId])
   @@index([analysisDate])
+  @@index([organizationId])
   @@map("site_analyses")
 }
 
@@ -195,10 +201,12 @@ model TrainingRecord {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([farmId])
   @@index([trainingDate])
   @@index([trainingType])
+  @@index([organizationId])
   @@map("training_records")
 }
 
@@ -263,7 +271,9 @@ model Plot {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([farmId])
+  @@index([organizationId])
   @@map("plots")
 }

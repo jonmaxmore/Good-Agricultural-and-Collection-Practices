@@ -66,6 +66,7 @@ model Attachment {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   // Hot-path indexes:
   //   - (resModel, resId)        : list-attachments-for-resource
@@ -79,5 +80,6 @@ model Attachment {
   @@index([uploadedBy])
   @@index([fileHash])
   @@index([isDeleted])
+  @@index([organizationId])
   @@map("attachments")
 }

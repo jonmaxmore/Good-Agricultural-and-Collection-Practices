@@ -59,11 +59,13 @@ model WorkActivity {
   note String?
 
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([applicationId])
   @@index([assignedUserId])
   @@index([state, candidateGroup])
   @@index([workType, state])
+  @@index([organizationId])
   // DB-06: index FK column
   @@index([completedBy])
   @@map("work_activities")

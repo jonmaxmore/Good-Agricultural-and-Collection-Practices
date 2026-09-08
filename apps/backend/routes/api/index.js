@@ -47,6 +47,8 @@ router.use('/auth/officer', require('./auth/auth-provider'));
 router.use('/auth/health', require('./auth/auth-health'));
 router.use('/auth/provider', require('./auth/auth-provider'));
 router.use('/public', require('./auth/public'));
+// ยืนยันตัวตนสองชั้นด้วย TOTP — เป็นความปลอดภัยของบัญชี ไม่ใช่การต่อ IdP ภายนอก
+router.use('/mfa', require('./identity/mfa'));
 
 // ── คำขอรับรอง ──────────────────────────────────────────────────────────────
 const applications = express.Router();
@@ -99,6 +101,8 @@ router.use('/files', require('./files/files'));
 router.use('/documents', require('./documents/documents'));
 router.use('/templates', require('./documents/templates'));
 router.use('/training-records', require('./documents/training-records'));
+// รายงานตามเงื่อนไขใบรับรอง — ผู้ถือใบรับรองส่งรายงานประจำงวด (ReportSubmission)
+router.use('/report-submissions', require('./documents/report-submissions'));
 
 // ── หน้าจอเจ้าหน้าที่ ────────────────────────────────────────────────────────
 const provider = express.Router();

@@ -48,15 +48,18 @@ model AuditLog {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   // Per-tenant hash-chain integrity (ADR-014): the sequence is unique WITHIN a
   // tenant, so getLastHash / verifyChain scope by organizationId and each
   // tenant's chain is independent + gap-free.
+  @@unique([organizationId, sequenceNumber])
   @@index([actorId])
   @@index([resourceType, resourceId])
   @@index([category, severity])
   @@index([createdAt(sort: Desc)])
   @@index([metadata], type: Gin)
+  @@index([organizationId])
   // DBA F-04 perf indexes (migration 20260515170000) — declared so migrate diff is drift-free.
   // NOTE: createdAt is @map("timestamp"); Prisma names the index from the field (createdAt).
   @@index([actorId, createdAt(sort: Desc)], map: "audit_logs_actorId_createdAt_idx")
@@ -96,10 +99,12 @@ model PostAuditTask {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([applicationId])
   @@index([status])
   @@index([dueDate])
+  @@index([organizationId])
   @@map("post_audit_tasks")
 }
 
@@ -135,10 +140,12 @@ model RevisionDeadline {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([applicationId])
   @@index([status])
   @@index([revisionDue])
+  @@index([organizationId])
   @@map("revision_deadlines")
 }
 

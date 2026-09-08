@@ -158,12 +158,14 @@ model Certificate {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([userId])
   @@index([status])
   @@index([certificateNumber])
   @@index([expiryDate])
   @@index([isDeleted])
+  @@index([organizationId])
   // DB-06: index FK columns (joins + ON DELETE Restrict parent-delete scans)
   @@index([applicationId])
   @@index([farmId])
@@ -200,9 +202,11 @@ model CertificateRevision {
   /// Which certificate columns changed, e.g. province, district, subDistrict, address.
   correctedFields String[] @default([])
   organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@unique([certificateId, revisionNo])
   @@index([certificateId])
+  @@index([organizationId])
   @@map("certificate_revisions")
 }
 

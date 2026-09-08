@@ -1,0 +1,80 @@
+# GACP Lite — ทั้งระบบในไฟล์เดียว
+#
+# ตั้งใจให้ `docker compose up -d` แล้วใช้งานได้เลย โดยไม่ต้องมีบริการภายนอกใด ๆ
+# ไม่มี Supabase ไม่มี Stripe ไม่มี IdP ของรัฐ — ฐานข้อมูลอยู่ในนี้เอง
+#
+# พอร์ตเลือกไว้ไม่ให้ชนกับระบบเต็มถ้าเผอิญรันอยู่บนเครื่องเดียวกัน
+# (ระบบเต็มใช้ 3001/3003/8001/8003/8080/8099/5432) — แก้ได้ที่ .env
+
+name: gacplite
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: gacplite-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gacp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env ก่อน — ไม่มีค่าเริ่มต้นโดยตั้งใจ}
+      POSTGRES_DB: ${POSTGRES_DB:-gacp_lite}
+      # เทียบสตริงไทยให้ถูกต้องตั้งแต่สร้างฐาน — เปลี่ยนทีหลังต้องสร้างใหม่
+      LANG: th_TH.utf8
+    ports:
+      - "127.0.0.1:${DB_PORT:-55460}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # ระบุ -U/-d ให้ตรง ไม่งั้น pg_isready ตอบ ready ตั้งแต่ก่อน initdb เสร็จ
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gacp} -d ${POSTGRES_DB:-gacp_lite}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: gacplite-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 8000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-gacp}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-gacp_lite}
+      JWT_SECRET: ${JWT_SECRET:?ต้องตั้งใน .env — ระบบปฏิเสธที่จะบูตด้วยค่าเดา}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?ต้องตั้งใน .env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ต้องตั้งใน .env — ใช้เข้ารหัสข้อมูลส่วนบุคคลในฐานข้อมูล}
+      CORS_ORIGINS: ${PUBLIC_WEB_URL:-http://localhost:3100}
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:3100}
+    ports:
+      - "127.0.0.1:${API_PORT:-8100}:8000"
+    volumes:
+      # เอกสารที่ผู้ยื่นอัปโหลด — เก็บนอกคอนเทนเนอร์ ไม่งั้นหายตอน rebuild
+      - uploads:/app/apps/backend/public/uploads
+      # กุญแจลงนามใบรับรอง — ต้องอยู่รอดข้ามการ deploy ไม่งั้นใบที่ออกไปแล้วตรวจไม่ผ่าน
+      - signing-keys:/app/apps/backend/keys
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web-app/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8100}
+    container_name: gacplite-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      BACKEND_URL: http://api:8000
+      NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8100}
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3100}:3000"
+
+volumes:
+  db-data:
+  uploads:
+  signing-keys:

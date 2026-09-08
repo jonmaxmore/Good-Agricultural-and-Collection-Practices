@@ -36,12 +36,14 @@ model Notification {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([userId])
   @@index([userId, isRead])
   // R2 M1: read path for the archived-letters surfaces (M2+) — a user's letters.
   @@index([userId, kind])
   @@index([createdAt(sort: Desc)])
+  @@index([organizationId])
   @@map("notifications")
 }
 
@@ -184,6 +186,7 @@ model ReportSubmission {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@unique([certificateId, reportType, reportMonth, reportYear])
   @@index([certificateId])
@@ -191,6 +194,7 @@ model ReportSubmission {
   @@index([reportType])
   @@index([status])
   @@index([reportYear, reportMonth])
+  @@index([organizationId])
   @@map("report_submissions")
 }
 
@@ -238,10 +242,12 @@ model ScopeOfWork {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([applicationId])
   @@index([status])
   @@index([isDeleted])
+  @@index([organizationId])
   // DB-06: index FK column
   @@index([assignedAuditorId])
   @@map("scope_of_works")
@@ -290,6 +296,7 @@ model AuditChecklist {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   // Onsite evidence capture (Phase B, cert-integrity fix, 2026-08-16) —
   // reverse relations for the two models onsite-evidence-gate.js counts.
@@ -301,6 +308,7 @@ model AuditChecklist {
   @@index([auditorId])
   @@index([status])
   @@index([isDeleted])
+  @@index([organizationId])
   @@map("audit_checklists")
 }
 
@@ -349,11 +357,13 @@ model MeetingRoom {
 
   // Tenancy (ADR-014, Phase 1)
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([applicationId])
   @@index([scheduledAt])
   @@index([status])
   @@index([isDeleted])
+  @@index([organizationId])
   // DB-06: index FK column
   @@index([hostId])
   @@map("meeting_rooms")
