@@ -14,14 +14,17 @@
  * here — every printed tax document will pick it up on next render.
  */
 
+const { ORGANIZATION } = require('./organization-identity');
+
+// ชื่อเดิมยังอยู่เพราะเอกสาร PDF เรียกใช้ · ค่าไม่ได้พิมพ์ไว้ที่นี่แล้ว มันมาจาก
+// organization-identity.js ซึ่งอ่านจาก env — เหตุผลเต็มอยู่ที่นั่น
 const MINISTRY_CONTACT = Object.freeze({
-    // Official DTAM switchboard, verified against dtam.moph.go.th footer
-    phone: '0-2591-7007',
-    email: 'contact@gacpth.com',
-    ministry: 'กรมการแพทย์แผนไทยและการแพทย์ทางเลือก',
-    ministryEn: 'Department of Thai Traditional and Alternative Medicine, Ministry of Public Health',
-    address: '88/23 หมู่ 4 ตำบลตลาดขวัญ อำเภอเมืองนนทบุรี จังหวัดนนทบุรี 11000',
-    website: 'https://dtam.moph.go.th',
+    phone: ORGANIZATION.phone,
+    email: ORGANIZATION.email,
+    ministry: ORGANIZATION.name,
+    ministryEn: ORGANIZATION.nameEn,
+    address: ORGANIZATION.address,
+    website: ORGANIZATION.website,
 });
 
 /**

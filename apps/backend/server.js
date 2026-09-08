@@ -152,13 +152,15 @@ app.use(helmet({
 }));
 
 // CORS Configuration
-const productionDefaultOrigins = [
-    'https://gacpth.com',
-    'https://www.gacpth.com',
-    'https://admin.gacpth.com',
-    'http://localhost:3000',
-    'https://localhost',
-];
+//
+// โหมด production ไม่มีโดเมนเริ่มต้น โดยตั้งใจ · GACP Lite ถูกส่งให้ลูกค้าเอาไปติดตั้ง
+// บนโดเมนของตัวเอง การใส่ gacpth.com ไว้เป็นค่าเริ่มต้นหมายความว่า deployment ของ
+// ลูกค้าไว้ใจโดเมนของหน่วยงานอื่นทันทีที่บูต และในทางกลับกัน โดเมนของลูกค้าเองจะถูก
+// ปฏิเสธจนกว่าจะไปตั้ง env — ผิดทั้งสองทาง
+//
+// ถ้าไม่ตั้ง CORS_ORIGINS / PUBLIC_WEB_URL เลย รายการจะว่าง และเบราว์เซอร์จะถูก
+// ปฏิเสธทุกที่มา ซึ่งเป็นความล้มเหลวที่ "ดังและถูกต้อง" ดีกว่าเงียบแล้วเปิดให้คนอื่น
+const productionDefaultOrigins = [];
 const developmentDefaultOrigins = [
     'http://localhost:3000',
     'http://localhost:3001',

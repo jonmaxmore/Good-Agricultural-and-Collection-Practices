@@ -25,7 +25,11 @@ export const INTERNAL_BACKEND_URL =
  * เรียงตาม priority: Docker hostname → loopback → localhost → nginx
  */
 export const FALLBACK_BACKEND_URLS = [
-    'http://backend:8000',
+    // ชื่อบริการใน docker-compose.yml ของ GACP Lite คือ `api` ไม่ใช่ `backend`
+    // (ระบบเต็มใช้ `backend`) · ค่าเดิมชี้ไปคอนเทนเนอร์ที่ไม่มีอยู่ — เส้นทางหลัก
+    // ยังทำงานเพราะ compose ส่ง BACKEND_URL=http://api:8000 มาให้ แต่ทุก fallback
+    // จะล้มเงียบ ๆ ตอนที่มันควรจะช่วย
+    'http://api:8000',
     'http://127.0.0.1:8000',
     'http://localhost:8000',
     'http://localhost',

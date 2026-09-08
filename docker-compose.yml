@@ -48,6 +48,13 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ต้องตั้งใน .env — ใช้เข้ารหัสข้อมูลส่วนบุคคลในฐานข้อมูล}
       CORS_ORIGINS: ${PUBLIC_WEB_URL:-http://localhost:3100}
       PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:3100}
+      # ตัวตนของหน่วยงาน — ไม่ตั้ง = ใช้ของกรมฯ ต้นทาง (ดู .env.example)
+      ORG_NAME: ${ORG_NAME:-}
+      ORG_NAME_EN: ${ORG_NAME_EN:-}
+      ORG_PHONE: ${ORG_PHONE:-}
+      ORG_EMAIL: ${ORG_EMAIL:-}
+      ORG_ADDRESS: ${ORG_ADDRESS:-}
+      ORG_WEBSITE: ${ORG_WEBSITE:-}
     ports:
       - "127.0.0.1:${API_PORT:-8100}:8000"
     volumes:
@@ -62,6 +69,14 @@ services:
       dockerfile: apps/web-app/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8100}
+        # Next อ่านค่าเหล่านี้ตอน build ไม่ใช่ตอนรัน — ต้องส่งเป็น arg
+        NEXT_PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:3100}
+        NEXT_PUBLIC_ORG_NAME: ${ORG_NAME:-}
+        NEXT_PUBLIC_ORG_NAME_EN: ${ORG_NAME_EN:-}
+        NEXT_PUBLIC_ORG_PHONE: ${ORG_PHONE:-}
+        NEXT_PUBLIC_ORG_EMAIL: ${ORG_EMAIL:-}
+        NEXT_PUBLIC_ORG_ADDRESS: ${ORG_ADDRESS:-}
+        NEXT_PUBLIC_ORG_WEBSITE: ${ORG_WEBSITE:-}
     container_name: gacplite-web
     restart: unless-stopped
     depends_on:

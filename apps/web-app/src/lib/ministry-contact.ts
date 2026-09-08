@@ -1,25 +1,22 @@
 /**
- * Ministry of Public Health — DTAM contact constants (frontend mirror).
+ * ข้อมูลติดต่อของหน่วยงาน — ตอนนี้อ่านจาก config ที่ตั้งค่าได้ ไม่ใช่ค่าคงที่
  *
- * Single source of truth for footer/header contact details rendered on
- * every applicant and officer page. Mirrors the backend module at
- * apps/backend/shared/ministry-contact.js — values must stay in sync.
+ * ชื่อ `MINISTRY_CONTACT` ยังอยู่เพราะมี 5 หน้าจอเรียกใช้ แต่ค่าไม่ได้พิมพ์ไว้ที่นี่แล้ว
+ * มันมาจาก @/lib/organization-identity ซึ่งอ่าน NEXT_PUBLIC_ORG_* · เหตุผลเต็มอยู่ที่นั่น
  *
- * Phone confirmed 2026-04-28 by reading the footer of the official
- * DTAM site (https://dtam.moph.go.th). If DTAM relocates or changes
- * the switchboard, update both this file AND
- * apps/backend/shared/ministry-contact.js — every printed tax document
- * AND every rendered footer will pick it up on next deploy.
+ * สรุปสั้น: GACP Lite ถูกส่งให้ลูกค้าเอาไปติดตั้ง · ค่าที่พิมพ์ไว้ตายตัวทำให้ระบบของ
+ * ลูกค้าบอกผู้ใช้ของลูกค้าให้ติดต่อหน่วยงานอื่น
  */
 
+import { ORGANIZATION } from '@/lib/organization-identity';
+
 export const MINISTRY_CONTACT = Object.freeze({
-  phone: '0-2591-7007',
-  email: 'contact@gacpth.com',
-  ministry: 'กรมการแพทย์แผนไทยและการแพทย์ทางเลือก',
-  ministryEn:
-    'Department of Thai Traditional and Alternative Medicine, Ministry of Public Health',
-  address: '88/23 หมู่ 4 ตำบลตลาดขวัญ อำเภอเมืองนนทบุรี จังหวัดนนทบุรี 11000',
-  website: 'https://dtam.moph.go.th',
+  phone: ORGANIZATION.phone,
+  email: ORGANIZATION.email,
+  ministry: ORGANIZATION.name,
+  ministryEn: ORGANIZATION.nameEn,
+  address: ORGANIZATION.address,
+  website: ORGANIZATION.website,
 } as const);
 
 export type MinistryContact = typeof MINISTRY_CONTACT;
