@@ -1,0 +1,309 @@
+// Domain: Authentication & User Management (Refactored to DTAM Next Standard)
+
+model User {
+  id        String   @id @default(uuid())
+  uuid      String   @unique @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accountType String  @default("HEALTH") // HEALTH | PROVIDER
+  /// @deprecated Wave D Phase 5a (2026-05-02) — discriminator moved to Entity.type.
+  /// Readers must consult Application.entity.type / EntityMembership instead.
+  /// Column physically dropped in Phase 5b after ≥1 production release.
+  entityType  String? // INDIVIDUAL | JURISTIC | COMMUNITY_ENTERPRISE
+  authType    String  @default("HEALTH_ID") // HEALTH_ID | PROVIDER_ID
+
+  email    String? @unique
+  password String
+
+  firstName   String?
+  lastName    String?
+  phoneNumber String?
+
+  // CANONICAL IDENTITY (บังคับใช้ตัวใดตัวหนึ่ง)
+  // Detokenize STAGE B3 (RFC docs/handoffs/national-id-detokenize-rfc-2026-06-29.md):
+  // the plaintext `@unique` was DROPPED from `healthId`/`providerId`. AES-GCM is
+  // random-IV → an encrypted column cannot carry a meaningful UNIQUE (every
+  // ciphertext differs even for the same plaintext), so the plaintext unique
+  // would either block re-encryption or be cosmetic. Uniqueness of the national
+  // ID is now held by the `healthIdHash`/`healthIdHmac` (+ provider equivalents)
+  // @unique columns — login/lookup already resolve via those. The `@@index`
+  // below is KEPT (cheap, and the column is still read for display).
+  healthId       String?
+  healthIdHash   String? @unique
+  // H-4 Phase 1 (additive): keyed-HMAC lookup column, nullable until backfill.
+  // Mirrors healthIdHash but holds computeLookupHmac() (keyed) instead of raw
+  // SHA-256. NO code reads it while AUTH_LOOKUP_USE_HMAC is off. See RFC
+  // docs/handoffs/H-4-national-id-hmac-migration-rfc.md.
+  healthIdHmac   String? @unique
+  providerId     String?
+  providerIdHash String? @unique
+  // H-4 Phase 1 (additive) — see healthIdHmac.
+  providerIdHmac String? @unique
+
+  // NEW: The Canonical System ID for Foreign Keys
+  canonicalId String @unique // ใช้ทำ Foreign Key กับทุกตาราง
+  // Detokenize STAGE 0 (RFC docs/handoffs/national-id-detokenize-rfc-2026-06-29.md):
+  // pre-re-key ESCROW of `canonicalId`. The STAGE-0 migration backfills
+  // `canonicalIdLegacy = canonicalId` (the national ID, today) so the STAGE-A
+  // re-key (canonicalId := COALESCE(healthIdHmac, providerIdHmac, id)) stays
+  // reversible — rollback does `UPDATE users SET canonicalId =
+  // COALESCE(canonicalIdLegacy, canonicalId)`. Nullable + NO @unique on purpose:
+  // a write-once snapshot, never read by application code, and users created
+  // AFTER the re-key have NULL here (the rollback COALESCE handles that). Dropped
+  // in STAGE C.
+  canonicalIdLegacy String?
+
+  ministryVerified   Boolean   @default(false)
+  ministryVerifiedAt DateTime?
+
+  // LEGACY FIELDS (Marked for Deprecation)
+  idCard     String? @map("idCard_deprecated")
+  idCardHash String? @unique @map("idCardHash_deprecated")
+  // H-4 Phase 1 (additive) — keyed-HMAC lookup column. See healthIdHmac.
+  idCardHmac String? @unique
+  laserCode  String?
+
+  // ── Legacy Entity Fields (Wave D Phase 5a — DEPRECATED 2026-05-02) ──
+  //
+  // These columns predate the Entity / EntityMembership model (Wave B
+  // Phase 62). Wave B/C migrated every reader to the Entity relation:
+  //   * applicant-resolver.js prefers Application.entity.{displayName,
+  //     type, juristicId, communityRegNo} since Phase 4d.
+  //   * Application.entityId points at the legal applicant since
+  //     Phase 66; new drafts populate it from the active workspace
+  //     (Phase 68 + Phase 4c + Wave C PR-5).
+  //   * /api/entities/* surface fully replaces the User-level company /
+  //     community profile editing.
+  //
+  // No backend code WRITES these columns since Wave B; surviving reads
+  // are intentional fallbacks for pre-Phase-66 rows. Drop in Phase 5b
+  // after this annotation has been on `main` for ≥ 1 production release
+  // (target: 2026-06).
+  /// @deprecated Wave D Phase 5a — read Entity.displayName instead.
+  companyName                 String?
+  /// @deprecated Wave D Phase 5a — read Entity.juristicId / .juristicIdHash.
+  taxId                       String?
+  /// @deprecated Wave D Phase 5a — read Entity.juristicIdHash.
+  taxIdHash                   String? @unique
+  // H-4 Phase 1 (additive) — keyed-HMAC lookup column. See healthIdHmac.
+  taxIdHmac                   String? @unique
+  /// @deprecated Wave D Phase 5a — moved to Entity.payload.director.name.
+  representativeName          String?
+  /// @deprecated Wave D Phase 5a — moved to Entity.payload.director.position.
+  representativePosition      String?
+  /// @deprecated Wave D Phase 5a — read Entity.displayName instead.
+  communityName               String?
+  /// @deprecated Wave D Phase 5a — read Entity.communityRegNo / .communityRegNoHash.
+  communityRegistrationNo     String?
+  /// @deprecated Wave D Phase 5a — read Entity.communityRegNoHash.
+  communityRegistrationNoHash String? @unique
+  // H-4 Phase 1 (additive) — keyed-HMAC lookup column. See healthIdHmac.
+  communityRegistrationNoHmac String? @unique
+
+  /// CANONICAL role value — lowercase and alias-collapsed, always one of the
+  /// CANONICAL_ROLES values in shared/canonical-rbac.js:
+  ///   admin | platform_admin | scheduler | document_reviewer | auditor |
+  ///   account_dtam | account_platform | account | health | system
+  ///
+  /// Migration 20260801000000_canonicalize_user_role rewrote every legacy raw
+  /// value ('HEALTH', 'REVIEWER_AUDITOR', 'ACCOUNTANT', 'SUPER_ADMIN',
+  /// 'FARMER', 'Applicant', …) into its canonical form, so `role` and
+  /// `req.user.canonicalRole` now hold the SAME string. Writers must stop
+  /// calling canonicalToLegacyRole() before persisting — write
+  /// normalizeRole(input) directly.
+  ///
+  /// Deliberately still a String, NOT a Prisma enum: the alias table evolves
+  /// (the Tier-16 ACCOUNT split is still mid-flight), and a PG enum cannot drop
+  /// a value without a type swap, which would turn every future role change
+  /// into a table-rewrite migration. shared/role-migration-map.js +
+  /// __tests__/unit/role-migration-map.test.js are the guard instead.
+  role        String @default("health")
+  status      String @default("PENDING_VERIFICATION")
+  accountTier String @default("NORMAL")
+
+  address     String?
+  province    String?
+  district    String?
+  subdistrict String?
+  zipCode     String?
+
+  isEmailVerified         Boolean   @default(false)
+  emailVerificationToken  String?
+  emailVerificationExpiry DateTime?
+  passwordResetToken      String?
+  passwordResetExpiry     DateTime?
+
+  lastLoginAt   DateTime?
+  loginAttempts Int       @default(0)
+  isLocked      Boolean   @default(false)
+  lockedUntil   DateTime?
+
+  // BE-AUTH-03-03 (session epoch): stamped to `now()` on every password
+  // change / reset. Any refresh- or access-token whose `iat` predates this
+  // instant is rejected — a stolen token cannot outlive the credential it
+  // was minted under, even if its JTI was never individually blocklisted.
+  // Nullable: NULL = no epoch set yet (all tokens pre-date nothing → allowed).
+  // A post-change LOGIN mints a fresh token whose iat > sessionsRevokedAt, so
+  // the legitimate user is never locked out.
+  sessionsRevokedAt DateTime?
+
+  createdBy   String?
+  updatedBy   String?
+  createdByIp String?
+  updatedByIp String?
+
+  isDeleted    Boolean   @default(false)
+  deletedAt    DateTime?
+  deletedBy    String?
+  deleteReason String?
+
+  retainUntil DateTime @default(dbgenerated("(now() + '5 years'::interval)"))
+  legalHold   Boolean  @default(false)
+
+  // R-HOTFIX-PDPA step 2 (2026-08-03) — the PDPA retention sweep's completion
+  // marker. `jobs/pdpa-retention-job.js` referenced both columns while neither was
+  // declared here nor created by any migration: the mocked unit suite accepted any
+  // field name, so the gap only surfaced against a real Postgres.
+  //
+  // The marker is what makes the sweep idempotent. Anonymization nulls the identity
+  // columns AND their hashes, and it does NOT move `retainUntil` (that would be a
+  // policy change, and the legal-hold guard forbids the sweep writing that column
+  // at all) — so without this flag an anonymized row stays a candidate and is
+  // re-swept every night, forever, with no record that it was ever done.
+  //
+  // NOT NULL with a default: every existing row is already `false`, i.e. "not yet
+  // anonymized", which is true. There is therefore no NULL state to filter for, and
+  // the sweep's WHERE must not pass `null` here — Prisma rejects a null predicate on
+  // a required scalar, and this sweep is fail-closed, so that would abort every run.
+  // Only migration 20260803130000_add_user_anonymization_markers writes these on the
+  // DDL side; only the sweep and the self-service erasure path write the values.
+  isAnonymized Boolean   @default(false)
+  anonymizedAt DateTime?
+
+  // Relations (ชี้ไปหา canonicalId เพื่อป้องกันบั๊กความสัมพันธ์)
+  applications       Application[]
+  certificates       Certificate[]
+  notifications      Notification[]
+  farms              Farm[]
+  drafts             ApplicationDraft[]
+  applicationBundles ApplicationBundle[]
+  reportSubmissions  ReportSubmission[]
+
+  // Work-item assignment relations (ADR-016 Phase 1A — BPMN-aligned)
+  assignedActivities  WorkActivity[] @relation("WorkActivityAssignee")
+  completedActivities WorkActivity[] @relation("WorkActivityCompleter")
+
+  // Application role assignments — id-keyed FKs to applications.{auditor,
+  // reviewer, headAuditor, scheduler}Id. The Phase 17 providerId-keyed
+  // relations were dropped in Phase 45 / Phase D of the drift unwind
+  // documented at docs/audit/2026-05-01-application-role-column-drift.md.
+  applicationsReviewing    Application[] @relation("ApplicationReviewer")
+  applicationsHeadAuditing Application[] @relation("ApplicationHeadAuditor")
+  applicationsScheduling   Application[] @relation("ApplicationScheduler")
+  applicationsAuditing     Application[] @relation("ApplicationAuditor")
+
+  // Wave B Phase 66 — applications submitted by this user (audit trail).
+  // Distinct from `applications`/`applicant` which is the legal-applicant
+  // relation via canonicalId. `submitter` records who clicked submit; the
+  // applicant entity may be a juristic/community entity managed by the
+  // submitter as a member or agent.
+  applicationsSubmitted Application[] @relation("ApplicationSubmitter")
+
+  // Provider tooling role assignments (Wave A Phase 18 / G15 cleanup) —
+  // id-keyed FKs from AuditChecklist.auditorId, ScopeOfWork.assignedAuditorId,
+  // MeetingRoom.hostId. Replace earlier denorm name columns.
+  auditChecklistsAsAuditor AuditChecklist[] @relation("AuditChecklistAuditor")
+  scopeOfWorksAsAuditor    ScopeOfWork[]    @relation("ScopeOfWorkAuditor")
+  meetingRoomsAsHost       MeetingRoom[]    @relation("MeetingRoomHost")
+
+  // Work-distribution ledger (Phase 1A): events where this user is the
+  // assignee vs the one who made the assignment.
+
+  // Multi-group membership (ADR-016 Phase 1C) — one user can belong
+  // to several canonical role groups (e.g. document_reviewer + auditor).
+  groupMemberships UserGroupMembership[]
+
+  // Wave 2 — per-permission GRANT/REVOKE overrides on top of the role
+  // baseline. Read live per request by effective-permissions-service.
+  permissionGrants UserPermissionGrant[]
+
+  // Wave B Phase 62 — Entity membership: one User can co-manage many
+  // Entities (individual / juristic / community enterprise) with different
+  // roles per entity. Replaces the User-level entityType/companyName/etc.
+  // fields above (those are kept for backward compat, will sunset in
+  // Phase 5 of the rollout).
+
+  // Wave C — workspace-switcher audit trail.
+
+  // T-010 (subtask 1b) — back-relation for the FK added on
+  // UserConsent.userId. PDPA consent audit trail; ON DELETE Restrict
+  // on the FK side prevents accidental user deletion before consents
+  // are archived.
+  consents UserConsent[]
+
+  // Wave D — membership lifecycle audit trail (split into two
+  // relations because a single event has both an actor and a target).
+
+  // AUTH-01-A EXPAND — ช่องทางยืนยันตัวตนที่ผูกกับบัญชีนี้ (หลายช่องทางต่อคนได้).
+  // ตรงข้ามกับ healthId/providerId ข้างบนซึ่ง users_single_identity_ck บังคับให้
+  // แถวหนึ่งถือได้ตัวเดียว — ดู IdentityLink ท้ายไฟล์.
+
+  privacySettings      Json?
+  notificationSettings Json?
+  twoFactorSecret      String?
+  twoFactorEnabled     Boolean @default(false)
+  twoFactorBackupCodes Json?
+  // 2FA method discriminator (email-OTP 2FA, opt-in). NULL/'TOTP' = the existing
+  // authenticator-app behaviour (existing rows untouched); 'EMAIL' = emailed
+  // 6-digit OTP. The OTP value itself is NOT stored here (transient in Redis);
+  // twoFactorSecret stays the TOTP base32 seed (null for the EMAIL method).
+  twoFactorMethod      String? @default("TOTP")
+
+  // Tenancy (ADR-014, Phase 1 — nullable until backfill+NOT NULL phase)
+  organizationId String
+
+  @@index([email])
+  @@index([healthId])
+  @@index([providerId])
+  @@index([canonicalId])
+  @@index([role, status])
+  @@index([accountType])
+  @@map("users")
+
+  /// ค่าธรรมเนียมที่ผู้ใช้คนนี้ยืนยันว่ารับแล้ว (เจ้าหน้าที่เท่านั้น)
+  feePaymentsConfirmed FeePayment[] @relation("FeePaymentConfirmedBy")
+}
+
+model UserConsent {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId      String
+  // T-010 (subtask 1b) — promote loose `userId` scalar into a proper FK.
+  // ON DELETE Restrict because consent rows are PDPA audit trail and must
+  // not cascade-delete with the user — operators must archive/handle
+  // consents explicitly before user deletion. Migration:
+  // 20260505010000_user_consent_user_fk.
+  user        User      @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  category    String
+  version     String
+  granted     Boolean   @default(false)
+  grantedAt   DateTime?
+  withdrawnAt DateTime?
+
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+
+  // Tenancy (ADR-014, Phase 1)
+  organizationId String
+
+  @@unique([userId, category])
+  @@index([userId])
+  @@index([category])
+  @@index([granted])
+  @@map("user_consents")
+}
+

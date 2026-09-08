@@ -1,0 +1,87 @@
+// พืชที่ระบบรับรอง และเอกสารที่กฎหมายเรียกต่อพืชหนึ่ง ๆ
+//
+// ทั้งสองโมเดลนี้เคยอยู่ใน trace.prisma ของระบบเต็ม ซึ่งเป็นที่อยู่ที่ผิด — มันไม่ใช่
+// เรื่องการสอบกลับ แต่เป็นข้อมูลหลักที่ "คำขอ" อ้างถึง: คำขอบอกว่าปลูกพืชอะไร และ
+// DocumentRequirement คือกฎว่าพืชนั้นต้องแนบเอกสารใดบ้าง · GACP Lite ไม่มีระบบสอบกลับ
+// แต่ยังต้องรู้สองอย่างนี้ จึงย้ายมาอยู่ในชื่อของตัวเอง
+
+model PlantSpecies {
+  id        String   @id @default(uuid())
+  uuid      String   @unique @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Identification (Maps to legacy plantId)
+  code String @unique // CAN, KRA, TUR
+
+  // Basic Info
+  nameTH         String // nameTH
+  nameEN         String? // nameEN
+  scientificName String? // scientificName
+  familyName     String? // familyName
+  description    String?
+  imageUrl       String?
+
+  // GACP Configuration
+  group           String  @default("GENERAL") // HIGH_CONTROL, GENERAL
+  requiresLicense Boolean @default(false)
+  sortOrder       Int     @default(0)
+
+  // Yield Prediction Data (New Phase 5 Requirement)
+  maxYieldPerPlant Float   @default(0.0) // Max Dry Weight (kg) per plant per cycle
+  standardSpacing  String? // Recommended spacing (e.g. "1x1", "1.5x1.5")
+
+  // Dynamic Configuration (JSON)
+  units      Json? // ["ไร่", "Rai"] or ["ต้น", "Tree"]
+  plantParts Json? // ["Root", "Leaf"]
+
+  // Requirements (JSON)
+  securityRequirements Json? // Array of check items
+  productionInputs     Json? // Form fields configuration
+
+  // Legacy Fields (kept for compatibility or future use)
+  gacpCategory    String? // MEDICINAL, CANNABIS, KRATOM, OTHER
+  dtamPlantCode   String?
+  cultivationType String? @default("SELF_GROWN")
+  harvestCycle    String?
+
+  // Relations
+  documentRequirements DocumentRequirement[]
+
+  // Status
+  isActive  Boolean @default(true)
+  isDeleted Boolean @default(false)
+
+  @@index([code])
+  @@index([nameTH])
+  @@index([isActive, isDeleted])
+  @@map("plant_species")
+}
+
+model DocumentRequirement {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation to Plant
+  plantCode String
+  plant     PlantSpecies @relation(fields: [plantCode], references: [code])
+
+  // Configuration
+  requestType    String // NEW, RENEW, AMEND, REPLACEMENT
+  documentName   String
+  documentNameTH String
+  category       String // LICENSE, PROPERTY, COMPLIANCE, FINANCIAL, OTHER
+  description    String?
+
+  // Validation Rules
+  isRequired       Boolean @default(true)
+  allowedFileTypes Json? // ["pdf", "jpg"]
+  maxFileSizeMB    Int     @default(10)
+
+  // Sorting
+  sortOrder Int @default(0)
+
+  @@index([plantCode, requestType])
+  @@map("document_requirements")
+}

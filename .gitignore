@@ -1,0 +1,19 @@
+node_modules/
+.next/
+dist/
+build/
+coverage/
+
+# ความลับ — ไฟล์ตัวอย่างชื่อ .env.example เท่านั้นที่เข้า repo
+.env
+.env.*
+!.env.example
+
+# กุญแจลงนามใบรับรอง — สร้างตอน deploy ไม่ใช่ตอน clone
+apps/backend/keys/
+*.pem
+
+apps/backend/public/uploads/
+logs/
+*.log
+.DS_Store
