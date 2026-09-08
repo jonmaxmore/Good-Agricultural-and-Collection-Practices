@@ -15,8 +15,14 @@ model FeePayment {
   applicationId String
 
   /// PHASE_1 = ค่าตรวจเอกสาร · PHASE_2 = ค่าตรวจแปลง
+  ///
   /// เป็น String ไม่ใช่ enum เพราะทั้งระบบใช้ String กับ vocabulary อื่นเหมือนกัน
-  /// และ CHECK constraint ใน migration เป็นตัวคุมคำ
+  /// คำที่ยอมรับถูกคุมด้วย CHECK constraint `fee_payments_phase_vocabulary`
+  /// (migration 20260909000000_integrity_constraints)
+  ///
+  /// ⚠️ Prisma ไม่รู้จัก CHECK constraint — `prisma migrate diff --from-empty` จะ
+  /// **ไม่** สร้างมันขึ้นมาใหม่ · ถ้าวันหนึ่งต้องสร้าง migration ชุดแรกใหม่
+  /// ต้องคัดลอก migration ตัวนั้นตามไปด้วย ไม่งั้น constraint หายเงียบ ๆ
   phase String
 
   /// บาท (ไม่ใช่สตางค์) — ตรงหน่วยกับ Application.phase1Amount / phase2Amount
@@ -34,7 +40,7 @@ model FeePayment {
   confirmedById String
   confirmedAt   DateTime @default(now())
 
-  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
   confirmedBy User        @relation("FeePaymentConfirmedBy", fields: [confirmedById], references: [id])
 
   /// หนึ่งงวด ยืนยันได้ครั้งเดียว — กันการกดซ้ำและกันการเดินสถานะซ้ำ

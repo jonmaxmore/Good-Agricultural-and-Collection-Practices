@@ -249,6 +249,10 @@ model Application {
   // DBA F-04 perf indexes (migration 20260515170000_add_performance_indexes_compound)
   // — declared here so `prisma migrate diff` (schema vs migrations) is drift-free.
   @@index([status, isDeleted], map: "applications_status_isDeleted_idx")
+  /// คิวของฝ่ายบัญชี: กรอง status+isDeleted แล้วเรียง updatedAt (คนที่รอนานที่สุดขึ้นก่อน)
+  /// index สองคอลัมน์ด้านบนพาไปถึงแถวได้ แต่ยังต้อง sort ในหน่วยความจำ — เพิ่ม
+  /// updatedAt เข้าไปให้อ่านมาเรียงแล้ว จึงข้ามขั้น sort เมื่อคิวยาว
+  @@index([status, isDeleted, updatedAt], map: "applications_status_isDeleted_updatedAt_idx")
   @@index([healthId, isDeleted, status], map: "applications_healthId_isDeleted_status_idx")
   @@index([workflowHistory], type: Gin, map: "applications_workflowHistory_gin_idx")
   // DB-06: index FK column
