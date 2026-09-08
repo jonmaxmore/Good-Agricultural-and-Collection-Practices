@@ -1510,6 +1510,27 @@ router.post('/draft-documents', authenticateHealth, receiveDraftDocument, async 
 
         return res.json({ success: true, data: { applicationId: application.id, draftId: application.id, documentId, fileName: safeFileName, fileUrl, mimeType: uploadedFile.mimetype, size: uploadedFile.size } });
     } catch (error) {
+        // multer เขียนไฟล์ลงดิสก์ไปแล้วก่อนที่ handler จะเริ่มทำงาน · ถ้าเราปฏิเสธทีหลัง
+        // ไฟล์นั้นจะค้างอยู่โดยไม่มีแถวในฐานข้อมูล ไม่มีเจ้าของ ไม่มีนาฬิกาเก็บรักษา และ
+        // คำขอลบตาม PDPA หามันไม่เจอ
+        //
+        // วัดจริง 2026-09-09: อัปโหลดล้มเหลว 2 ครั้ง เหลือไฟล์กำพร้า 2 ไฟล์ ไฟล์ละ 2,430
+        // ไบต์ · บนระบบจริงที่ผู้ยื่นอัปบัตรประชาชนหรือโฉนดผิดสถานะ นั่นคือเอกสารส่วนบุคคล
+        // ค้างบนดิสก์ที่ไม่มีใครรู้ว่ามีอยู่
+        //
+        // ลบแบบ best-effort: ถ้าลบไม่ได้ก็บันทึกไว้ แต่ยังตอบผู้ใช้ด้วยเหตุผลจริงของ
+        // ความล้มเหลวเดิม ไม่ใช่เหตุผลของการเก็บกวาด
+        if (req.file?.path) {
+            try {
+                await fsPromises.unlink(req.file.path);
+            } catch (cleanupError) {
+                if (cleanupError?.code !== 'ENOENT') {
+                    logger.warn('[Applications Draft Documents Upload] ลบไฟล์ที่อัปโหลดค้างไม่สำเร็จ', {
+                        path: req.file.path, reason: cleanupError?.message,
+                    });
+                }
+            }
+        }
         logger.error('[Applications Draft Documents Upload] Error:', error);
         return respondError(res, req, error, { message: 'Failed to upload draft document' });
     }

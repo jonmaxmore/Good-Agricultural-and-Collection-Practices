@@ -270,6 +270,24 @@ function classifyPrismaError(error) {
  * @param {string} [opts.label]        log label (e.g. '[Quotes] create')
  * @param {boolean} [opts.log=true]    log non-mapped (i.e. 5xx) errors
  */
+/**
+ * ค้นประโยคที่เขียนไว้ให้คนอ่านจากแคตตาล็อกรหัสข้อผิดพลาด (204 รหัส)
+ *
+ * lazy require ด้วยเหตุผลเดียวกับ logger ด้านล่าง: เลี่ยงการผูกลำดับโหลดระหว่าง
+ * shared/ กันเอง · คืน null เงียบ ๆ ถ้าแคตตาล็อกอ่านไม่ได้ — ข้อความสำรองของผู้เรียก
+ * ยังทำงานได้ การตอบด้วยข้อความที่หยาบกว่าดีกว่าการโยน error ซ้อน error
+ */
+function lookupErrorCode(code) {
+  try {
+    const mod = require('./error-codes');
+    const table = mod.ERROR_CODES || mod;
+    const entry = table[code];
+    return entry && (entry.messageEn || entry.messageTh) ? entry : null;
+  } catch {
+    return null;
+  }
+}
+
 function respondError(res, req, error, opts = {}) {
   const mapped = classifyPrismaError(error);
   if (mapped) {
@@ -293,10 +311,26 @@ function respondError(res, req, error, opts = {}) {
     const explicitCode = typeof error?.code === 'string' && !/^P\d{4}$/.test(error.code)
       ? error.code
       : null;
+    const resolvedCode = opts.code || explicitCode || (explicitStatus === 404 ? 'NOT_FOUND' : 'REQUEST_FAILED');
+
+    // `opts.message` คือข้อความ **สำรอง** ของผู้เรียก ไม่ใช่ข้อความทับ
+    //
+    // วัดจริง 2026-09-09: ผู้ยื่นอัปโหลดเอกสารเข้าคำขอที่อยู่สถานะ PENDING_AUDIT_FEE
+    // เซิร์ฟเวอร์รู้ว่า APPLICATION_NOT_EDITABLE และแคตตาล็อกมีประโยคไทยที่ถูกต้องอยู่แล้ว
+    // ("ใบสมัครนี้ไม่สามารถแก้ไขได้ในสถานะปัจจุบัน") แต่ผู้ยื่นได้
+    // "Failed to upload draft document" + messageTh "เกิดข้อผิดพลาดภายในระบบ"
+    // — กฎธุรกิจปกติถูกแสดงเป็นระบบพัง เกษตรกรจึงโทรหาซัพพอร์ตเรื่องที่ไม่ใช่บั๊ก
+    //
+    // เมื่อรหัสที่ผู้โยนแนบมาอยู่ในแคตตาล็อก ประโยคของแคตตาล็อกชนะ เพราะมันเขียนไว้
+    // เพื่อคนอ่านโดยเฉพาะ · รหัสที่แคตตาล็อกไม่รู้จักยังใช้ข้อความสำรองของผู้เรียกเหมือนเดิม
+    const catalogued = explicitCode ? lookupErrorCode(explicitCode) : null;
+
     return sendErrorResponse(res, req, {
       status: explicitStatus,
-      code: opts.code || explicitCode || (explicitStatus === 404 ? 'NOT_FOUND' : 'REQUEST_FAILED'),
-      message: opts.message || safeErrorMessage(error),
+      code: resolvedCode,
+      message: catalogued?.messageEn || DEFAULT_ERROR_MESSAGES[explicitCode]?.en
+        || opts.message || safeErrorMessage(error),
+      messageTh: catalogued?.messageTh || DEFAULT_ERROR_MESSAGES[explicitCode]?.th || undefined,
     });
   }
 
