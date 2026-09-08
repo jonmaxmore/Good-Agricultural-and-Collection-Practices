@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/primitives/button';
 import { AuthService, AuthUser } from '@/lib/services/auth-service';
 import { HEALTH_LOGIN_ROUTE, PROVIDER_LOGIN_ROUTE } from '@/lib/constants/auth-routes';
 import { Footer } from '@/components/layout/Footer';
-import { EntitySwitcher } from '@/components/layout/entity-switcher';
 import { LanguageToggle } from '@/components/feature/LanguageToggle';
 import {
   DropdownMenu,
@@ -281,7 +280,7 @@ export function DashboardLayout({
          ═══════════════════════════════════════════════════════ */}
       <header className="gov-topbar">
         {/* Slim bar (N2, tile-home-redesign) — logo only on the left;
-            EntitySwitcher, toggles, bell, and the avatar dropdown on the
+            toggles, bell, and the avatar dropdown on the
             right. The desktop menu-link row + "เพิ่มเติม" overflow menu are
             retired — every destination now lives inside the role's
             tile-home page, and inner pages render BackHomeCrumb in the
@@ -324,7 +323,11 @@ export function DashboardLayout({
           <div className="flex shrink-0 items-center gap-1.5 lg:gap-3">
             {/* Wave C — workspace switcher (Google Ads / Stripe pattern).
                 Health users only. Providers scope by Application instead. */}
-            <EntitySwitcher hidden={role !== 'health'} />
+            {/* ตัวสลับพื้นที่ทำงานถูกถอดออกจาก GACP Lite — ระบบนี้มีหน่วยงานเดียว
+                และผู้ยื่นหนึ่งคนมีตัวตนเดียว ไม่มีอะไรให้สลับ · ตัวมันเรียก
+                /api/entities/* ที่ไม่มีในระบบนี้ ผลคือผู้ยื่นเห็นแถบแดง
+                "โหลดพื้นที่ทำงานไม่สำเร็จ" ค้างอยู่บนหัวทุกหน้า ทั้งที่งานของเขาสำเร็จดี
+                — คำเตือนที่เตือนเรื่องที่ไม่มีอยู่ ทำให้คำเตือนจริงถูกมองข้าม */}
 
             {/* Theme toggle — min 44x44 for touch */}
             <button

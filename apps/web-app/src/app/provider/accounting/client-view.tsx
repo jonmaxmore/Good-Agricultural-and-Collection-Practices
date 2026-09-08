@@ -18,6 +18,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { PageToolbar, SummaryCard, DataTable, StatusBadge, type DataColumn } from '@/components/finance';
 import { apiClient } from '@/lib/api';
+import ProviderLayout from '../components/provider-layout';
 import { notifications } from '@/lib/notifications';
 
 type PendingFee = {
@@ -92,7 +93,16 @@ export default function FeeQueueClient() {
     { key: 'applicant', header: 'ผู้ยื่น', type: 'text', render: (r) => r.applicantName || '—' },
     {
       key: 'phase', header: 'งวด', type: 'status',
-      render: (r) => <StatusBadge status={r.phase === 'PHASE_1' ? 'ค่าตรวจเอกสาร' : 'ค่าตรวจแปลง'} />,
+      // `status` คือรหัสที่ใช้เลือกโทนสี ส่วน `label` คือข้อความที่คนอ่าน — ส่งข้อความไทย
+      // เข้าช่อง status ทำให้ lookup ไม่เจอ แล้วป้ายขึ้นว่า "ไม่ทราบสถานะ" ซึ่งแปลว่า
+      // เจ้าหน้าที่ไม่รู้ว่ากำลังยืนยันงวดไหนอยู่
+      render: (r) => (
+        <StatusBadge
+          status={r.phase}
+          label={r.label}
+          tone={r.phase === 'PHASE_1' ? 'info' : 'pending'}
+        />
+      ),
     },
     {
       key: 'amount', header: 'จำนวน (บาท)', type: 'money',
@@ -130,7 +140,11 @@ export default function FeeQueueClient() {
   const total = rows.reduce((sum, r) => sum + r.amountThb, 0);
   const overdue = rows.filter((r) => daysWaiting(r.waitingSince) >= 7).length;
 
+  // ProviderLayout คือแถบนำทางบน/เมนู/ท้ายหน้าของฝั่งเจ้าหน้าที่ · หน้าอื่นทุกหน้า
+  // import มันเอง (มันไม่ได้อยู่ใน app/provider/layout.tsx) · ตอนแรกผมลืม ผลคือหน้า
+  // ค่าธรรมเนียมแสดงลอย ๆ ไม่มีทางกลับ และเนื้อหาชนขอบจอ
   return (
+    <ProviderLayout>
     <div className="flex flex-col gap-6">
       <PageToolbar
         title="ค่าธรรมเนียมที่รอยืนยัน"
@@ -160,5 +174,6 @@ export default function FeeQueueClient() {
         <strong> คุณ </strong>ยืนยันว่าได้รับเงินแล้ว ชื่อของคุณและเวลาที่กดจะถูกบันทึกไว้กับคำขอ
       </p>
     </div>
+    </ProviderLayout>
   );
 }

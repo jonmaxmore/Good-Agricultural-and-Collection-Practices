@@ -281,6 +281,19 @@ export const SCHEDULER_NAV: NavItem[] = [
  * (dashboards replaced by tile-home; contains only task menus)
  */
 export const ACCOUNT_NAV: NavItem[] = [
+  {
+    // เมนูเดียวของฝ่ายบัญชี และเป็นงานเดียวที่เขามีในระบบนี้: บอกว่าเงินเข้าแล้ว
+    // ลิสต์นี้เคยว่าง ผลคือเจ้าหน้าที่บัญชีล็อกอินแล้วเห็นหน้า "เลือกเมนู" ที่ไม่มีเมนู
+    key: 'fee-queue',
+    path: '/provider/accounting',
+    labelTH: 'ค่าธรรมเนียมที่รอยืนยัน',
+    descTH: 'คำขอที่ชำระแล้วแต่ระบบยังไม่รับรู้ — กดยืนยันเพื่อให้คำขอเดินต่อ',
+    icon: Banknote,
+    roles: ['account'],
+    tier: 'primary',
+    bottomNav: true,
+    shortTH: 'ค่าธรรมเนียม',
+  },
 ];
 
 /**

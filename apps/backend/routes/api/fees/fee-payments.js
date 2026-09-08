@@ -60,6 +60,27 @@ const PHASES = Object.freeze({
  * เป็นรหัสคำขอ แล้วตอบ 404 ให้กับหน้าจอของฝ่ายบัญชีเอง
  */
 router.get('/pending', authenticateProvider, async (req, res) => {
+    // ใครเห็นคิวนี้ได้: คนที่ "ลงมือกับมันได้" — ถามจาก ROLE_TRANSITIONS ที่เดียว
+    // เหมือนประตูยืนยัน ไม่ทำสำเนากติกา
+    //
+    // เดิมด่านนี้มีแค่ authenticateProvider · วัดจริง 2026-09-08: ผู้ตรวจเอกสาร
+    // เรียกแล้วได้ APP-2569-MTSKYYON-9F43CD · สมชาย ใจดี · 29,425 บาท ทั้งที่คำขอ
+    // ใบนั้นไม่ได้มอบหมายให้เขา · การเห็นทั้งกองว่าใครค้างจ่ายเท่าไร คือข้อมูลของ
+    // ฝ่ายบัญชี ไม่ใช่ของทุกคนที่ล็อกอินเป็นเจ้าหน้าที่ได้
+    const actorRole = normalizeRole(req.user?.role);
+    const mayAct = Object.values(PHASES)
+        .some((spec) => canRoleTransition(actorRole, spec.from, spec.to));
+    // ผู้ดูแลระบบเห็นได้เพื่อการกำกับ (ตอบคำถาม "ทำไมใบนี้ค้าง") แต่กดยืนยันไม่ได้ —
+    // ประตู confirm ยังถาม canRoleTransition ซึ่งไม่ให้ admin เดินอยู่ดี
+    if (!mayAct && actorRole !== 'admin') {
+        return sendErrorResponse(res, req, {
+            status: 403,
+            code: 'FEE_QUEUE_FORBIDDEN',
+            message: 'คิวค่าธรรมเนียมเปิดให้เฉพาะฝ่ายบัญชี',
+            messageTh: 'คิวค่าธรรมเนียมเปิดให้เฉพาะฝ่ายบัญชี',
+        });
+    }
+
     try {
         const waiting = await prisma.application.findMany({
             where: { status: { in: [PHASES.PHASE_1.from, PHASES.PHASE_2.from] }, isDeleted: false },
@@ -191,7 +212,7 @@ router.post('/:applicationId/:phase/confirm', authenticateProvider, async (req, 
     }
 
     const actorRole = normalizeRole(req.user?.role);
-    // สิทธิ์มาจาก ROLE_TRANSITIONS ที่เดียว — ผู้ตรวจเอกสารถือ งวด 1 ผู้ตรวจแปลงถือ งวด 2
+    // สิทธิ์มาจาก ROLE_TRANSITIONS ที่เดียว — ฝ่ายบัญชีถือทั้งสองงวด
     // ไม่ทำสำเนากติกามาไว้ที่นี่ เพราะสำเนาคือสิ่งที่จะเพี้ยนทีหลัง
     if (!canRoleTransition(actorRole, spec.from, spec.to)) {
         return sendErrorResponse(res, req, {

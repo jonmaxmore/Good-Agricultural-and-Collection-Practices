@@ -60,49 +60,16 @@ const PERMISSIONS = Object.freeze({
   APPLICATION_SUBMIT: 'application.submit',
   APPLICATION_VIEW_SELF: 'application.view.self',
   APPLICATION_VIEW_ALL: 'application.view.all',
-  // ประตูตามสอบย้อนกลับทั่วประเทศ (รอบปลูก แปลง กิจกรรม ของทุกฟาร์ม) — แยกจาก
-  // APPLICATION_VIEW_ALL เพราะสองอย่างนี้คือข้อมูลคนละชุด "ดูใบสมัครทั้งหมด" เป็นสิ่งที่ฝ่าย
-  // การเงินต้องมีเพื่อออกใบแจ้งหนี้ ส่วน "ดูไทม์ไลน์การเพาะปลูกและตำแหน่งแปลงของทุกฟาร์ม"
-  // ไม่ใช่งานของเขา — มติ operator 2026-09-07: ฝ่ายการเงิน "เห็นแค่ billing หรือ transaction
-  // และข้อมูลที่เอาไปทำบัญชีเท่านั้น" (F-SCOPE-01)
-  TRACKING_VIEW_ALL: 'tracking.view.all',
   APPLICATION_DOC_REVIEW: 'application.document.review',
   APPLICATION_SCHEDULE: 'application.schedule',
   APPLICATION_AUDIT_RECORD: 'application.audit.record',
   APPLICATION_WORKFLOW_TRANSITION: 'application.workflow.transition',
   USERS_MANAGE: 'users.manage',
   MASTER_DATA_MANAGE: 'master_data.manage',
-  ACCOUNTING_DASHBOARD_READ: 'accounting.dashboard.read',
-  INVOICE_VIEW_ALL: 'invoice.view.all',
-  RECEIPT_ISSUE: 'receipt.issue',
   REPORT_EXPORT: 'report.export',
   AUDIT_TIMELINE_READ: 'audit.timeline.read',
   AUDIT_SUBMIT: 'audit.submit',
   APPLICATION_OVERRIDE: 'application.override',
-  // Slip-flow (2026-04-29): manual bank-transfer + slip-upload + ACCOUNT review
-  // replaces the prior gateway/webhook integration. See:
-  //   docs/architecture/2026-04-29-rfc-payment-slip-flow.md
-  BANK_ACCOUNT_READ_ALL: 'bank_account.read.all',
-  BANK_ACCOUNT_MANAGE: 'bank_account.manage',
-  PAYMENT_SLIP_READ_ALL: 'payment_slip.read.all',
-  // Generic review permission retained for legacy ACCOUNT users until
-  // migration completes. New routes should check the side-specific
-  // keys below.
-  PAYMENT_SLIP_REVIEW: 'payment_slip.review',
-  // Tier 16 ACCOUNT split — side-specific review permissions. The
-  // payment-slip-service consults reviewer.role at runtime to decide
-  // which side (DTAM / PLATFORM) the slip belongs to, and rejects with
-  // 403 INVALID_REVIEWER_SIDE if the slip's invoice serviceType does
-  // not match. The audit trail records actorRole = ACCOUNT so an auditor can see
-  // which officer said the money arrived.
-  PAYMENT_SLIP_REVIEW_DTAM: 'payment_slip.review.dtam',
-  PAYMENT_SLIP_REVIEW_PLATFORM: 'payment_slip.review.platform',
-  // Admin-only — for support / break-glass scenarios. Routes log
-  // [admin-override] when ADMIN reviews a slip so post-incident
-  // review can flag the bypass. AUDITOR carries the read-only
-  // variant of this via PAYMENT_SLIP_READ_ALL.
-  PAYMENT_SLIP_REVIEW_ANY: 'payment_slip.review.any',
-  PAYMENT_SLIP_READ_OWN: 'payment_slip.read.own',
 });
 
 // Permission sets shared by both new ACCOUNT_* roles — extracted so the
@@ -110,35 +77,22 @@ const PERMISSIONS = Object.freeze({
 // the only meaningful difference.
 const ACCOUNT_BASE_PERMISSIONS = [
   PERMISSIONS.APPLICATION_VIEW_ALL,
-  PERMISSIONS.ACCOUNTING_DASHBOARD_READ,
-  PERMISSIONS.INVOICE_VIEW_ALL,
-  PERMISSIONS.RECEIPT_ISSUE,
   PERMISSIONS.REPORT_EXPORT,
   PERMISSIONS.AUDIT_TIMELINE_READ,
-  PERMISSIONS.BANK_ACCOUNT_READ_ALL,
-  PERMISSIONS.BANK_ACCOUNT_MANAGE,
-  PERMISSIONS.PAYMENT_SLIP_READ_ALL,
-  // Generic review kept so legacy middleware checks pass; the
-  // payment-slip-service still enforces the per-side gate.
-  PERMISSIONS.PAYMENT_SLIP_REVIEW,
 ];
 
 const ROLE_PERMISSIONS = Object.freeze({
   [CANONICAL_ROLES.HEALTH]: new Set([
     PERMISSIONS.APPLICATION_SUBMIT,
     PERMISSIONS.APPLICATION_VIEW_SELF,
-    // Slip-flow: applicants see only their own slips
-    PERMISSIONS.PAYMENT_SLIP_READ_OWN,
   ]),
   [CANONICAL_ROLES.DOCUMENT_REVIEWER]: new Set([
-    PERMISSIONS.TRACKING_VIEW_ALL,
     PERMISSIONS.APPLICATION_VIEW_ALL,
     PERMISSIONS.APPLICATION_DOC_REVIEW,
     PERMISSIONS.APPLICATION_WORKFLOW_TRANSITION,
     PERMISSIONS.AUDIT_TIMELINE_READ,
   ]),
   [CANONICAL_ROLES.SCHEDULER]: new Set([
-    PERMISSIONS.TRACKING_VIEW_ALL,
     PERMISSIONS.APPLICATION_VIEW_ALL,
     PERMISSIONS.APPLICATION_SCHEDULE,
     PERMISSIONS.APPLICATION_WORKFLOW_TRANSITION,
@@ -146,7 +100,6 @@ const ROLE_PERMISSIONS = Object.freeze({
     PERMISSIONS.REPORT_EXPORT,
   ]),
   [CANONICAL_ROLES.AUDITOR]: new Set([
-    PERMISSIONS.TRACKING_VIEW_ALL,
     PERMISSIONS.APPLICATION_VIEW_ALL,
     PERMISSIONS.APPLICATION_DOC_REVIEW,
     PERMISSIONS.APPLICATION_AUDIT_RECORD,
@@ -154,14 +107,9 @@ const ROLE_PERMISSIONS = Object.freeze({
     PERMISSIONS.AUDIT_TIMELINE_READ,
     PERMISSIONS.AUDIT_SUBMIT,
     PERMISSIONS.REPORT_EXPORT,
-    // Tier 16: AUDITOR gets read-only visibility across BOTH sides so
-    // segregation-of-duties audits can be performed. No write/approve.
-    PERMISSIONS.PAYMENT_SLIP_READ_ALL,
   ]),
   [CANONICAL_ROLES.ACCOUNT]: new Set([
     ...ACCOUNT_BASE_PERMISSIONS,
-    PERMISSIONS.PAYMENT_SLIP_REVIEW_DTAM,
-    PERMISSIONS.PAYMENT_SLIP_REVIEW_PLATFORM,
   ]),
   [CANONICAL_ROLES.ADMIN]: new Set(Object.values(PERMISSIONS)),
   // PLATFORM_ADMIN is a superset of ADMIN (all permissions) plus the

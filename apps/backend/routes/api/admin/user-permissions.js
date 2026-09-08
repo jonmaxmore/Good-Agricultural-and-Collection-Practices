@@ -79,21 +79,10 @@ const PERMISSION_LABELS = Object.freeze({
     [PERMISSIONS.APPLICATION_WORKFLOW_TRANSITION]: 'เปลี่ยนสถานะใบสมัคร (workflow)',
     [PERMISSIONS.USERS_MANAGE]: 'จัดการผู้ใช้งาน',
     [PERMISSIONS.MASTER_DATA_MANAGE]: 'จัดการข้อมูลหลัก (master data)',
-    [PERMISSIONS.ACCOUNTING_DASHBOARD_READ]: 'ดูแดชบอร์ดบัญชี',
-    [PERMISSIONS.INVOICE_VIEW_ALL]: 'ดูใบแจ้งหนี้ทั้งหมด',
-    [PERMISSIONS.RECEIPT_ISSUE]: 'ออกใบเสร็จ/ใบกำกับภาษี',
     [PERMISSIONS.REPORT_EXPORT]: 'ส่งออกรายงาน',
     [PERMISSIONS.AUDIT_TIMELINE_READ]: 'ดูไทม์ไลน์การตรวจสอบ',
     [PERMISSIONS.AUDIT_SUBMIT]: 'ส่งผลการตรวจสอบ',
     [PERMISSIONS.APPLICATION_OVERRIDE]: 'แก้ไข/บังคับสถานะใบสมัคร (admin)',
-    [PERMISSIONS.BANK_ACCOUNT_READ_ALL]: 'ดูบัญชีธนาคารทั้งหมด',
-    [PERMISSIONS.BANK_ACCOUNT_MANAGE]: 'จัดการบัญชีธนาคาร',
-    [PERMISSIONS.PAYMENT_SLIP_READ_ALL]: 'ดูสลิปการชำระเงินทั้งหมด',
-    [PERMISSIONS.PAYMENT_SLIP_REVIEW]: 'ตรวจสลิป (ทั่วไป, legacy)',
-    [PERMISSIONS.PAYMENT_SLIP_REVIEW_DTAM]: 'ตรวจสลิปฝั่งรัฐ (DTAM)',
-    [PERMISSIONS.PAYMENT_SLIP_REVIEW_PLATFORM]: 'ตรวจสลิปฝั่งแพลตฟอร์ม',
-    [PERMISSIONS.PAYMENT_SLIP_REVIEW_ANY]: 'ตรวจสลิปได้ทุกฝั่ง (break-glass)',
-    [PERMISSIONS.PAYMENT_SLIP_READ_OWN]: 'ดูสลิปของตนเอง',
 });
 
 /**

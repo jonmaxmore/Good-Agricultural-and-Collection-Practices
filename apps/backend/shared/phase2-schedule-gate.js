@@ -5,7 +5,7 @@
  *
  * Business rule: a field inspection may not be queued until the round-2 fee is
  * recorded as received. In GACP Lite that record is one FeePayment row written
- * by the auditor (routes/api/fees/fee-payments.js); ROLE_TRANSITIONS grants the
+ * by the accounting desk (routes/api/fees/fee-payments.js); ROLE_TRANSITIONS grants the
  * PENDING_AUDIT_FEE -> AUDIT_FEE_PAID edge to that role alone, so "state is
  * AUDIT_FEE_PAID" is itself the proof, and the FeePayment row is the second,
  * independent layer — it names the officer who said so.

@@ -110,9 +110,15 @@ export default function LoginChooser() {
   const { colorScheme, toggleColorScheme } = useAppTheme();
   const isDark = colorScheme === 'dark';
 
+  // จอเดสก์ท็อปสูง 900px แต่เนื้อหาจบที่ ~470px · เดิมเนื้อหาเกาะขอบบน แล้วเหลือที่ว่าง
+  // 450px ข้างล่าง ซึ่งอ่านเป็น "หน้ายังทำไม่เสร็จ" ตั้งแต่แรกเห็น · justify-center
+  // จัดกึ่งกลางเมื่อจอสูงพอ และถอยไปเกาะบนเองเมื่อเนื้อหายาวกว่าจอ (มือถือ)
   return (
-    <main id="main-content" className="min-h-screen bg-background px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl">
+    <main
+      id="main-content"
+      className="flex min-h-screen flex-col justify-center bg-background px-4 py-8 sm:px-6 lg:px-8"
+    >
+      <div className="mx-auto w-full max-w-5xl">
         <header className="flex items-center justify-between gap-4 pb-6">
           <Link
             href="/"
