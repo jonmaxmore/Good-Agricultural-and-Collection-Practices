@@ -277,7 +277,7 @@ export const SCHEDULER_NAV: NavItem[] = [
 ];
 
 /**
- * ACCOUNT_NAV — account roles (account_dtam, account_platform, account) navigation
+ * ACCOUNT_NAV — เมนูของฝ่ายบัญชี
  * (dashboards replaced by tile-home; contains only task menus)
  */
 export const ACCOUNT_NAV: NavItem[] = [
@@ -378,7 +378,7 @@ export function getNavForRole(role: string | null | undefined): NavItem[] {
   if (canonical === 'scheduler') {
     return SCHEDULER_NAV;
   }
-  if (canonical === 'account' || canonical === 'account_dtam' || canonical === 'account_platform') {
+  if (canonical === 'account') {
     return ACCOUNT_NAV;
   }
   if (canonical === 'admin') {

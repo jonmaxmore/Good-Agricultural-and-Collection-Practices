@@ -16,7 +16,7 @@ const schedulerAuditSchedulesGet = [
     // 2026-09-07 — was `requireRole(PROVIDERRoles)`, and PROVIDERRoles is
     // ROLE_GROUPS.FULL_STAFF (handlers/shared.js:13), which includes both finance
     // roles by definition. So this read said "any staff at all" while its name said
-    // "provider". Measured on staging: account_dtam got 200 and two live rows naming
+    // "provider". Measured on staging: an accounting officer got 200 and two live rows naming
     // applications and their audit state — which auditor visits which farm and when.
     // The operator's F-SCOPE-01 ruling puts finance on billing/transaction/accounting
     // data only, and already removed them from /provider/planting-cycles for exactly

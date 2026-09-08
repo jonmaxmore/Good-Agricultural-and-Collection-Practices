@@ -91,3 +91,64 @@ $ npx next build
   ตรวจแปลง → ออกใบรับรอง) · ที่พิสูจน์แล้วคือเส้นทาง API และประตูค่าธรรมเนียม
 - ยังไม่ได้ build image ด้วย docker compose จริง (ตรวจแล้วแค่ `docker compose config`)
 - ยังไม่มีชุดทดสอบอัตโนมัติของ Lite เอง — เทสของระบบเต็มไม่ได้ถูกยกมา
+
+
+---
+
+# รอบที่ 2 — คืนตำแหน่ง "คนจัดคิว" และ "บัญชี" (2026-09-08)
+
+operator ทักว่าตารางตำแหน่งงานขาดสองตำแหน่ง · ถูกต้อง — ผมยุบมันทิ้งเอง ทั้งที่คำสั่ง
+เดิมบอกแค่ให้แยกคนตรวจเอกสารกับคนตรวจแปลง
+
+## สิ่งที่พบตอนไล่ตรวจ (ทุกข้อวัดด้วยการรัน ไม่ใช่การอ่าน)
+
+| # | สิ่งที่พบ | ความรุนแรง |
+|---|---|---|
+| 1 | **บัญชีผู้ดูแลที่ seed สร้าง ล็อกอินไม่ได้** — seed ไม่เขียน `providerIdHash` (คอลัมน์ที่ประตูล็อกอินค้นจริง) และ `accountType` · ลูกค้าติดตั้งตามคู่มือแล้วเข้าระบบไม่ได้เลย | ติดตั้งแล้วใช้ไม่ได้ |
+| 2 | **landing ของคนจัดคิวชี้ไป `/provider/coordinator` ที่ถูกลบ** — ล็อกอินแล้วเจอ 404 · `platform_admin` ก็ชี้ไป `/admin/organizations` ที่ถูกลบเช่นกัน | เข้าระบบแล้วตัน |
+| 3 | **หน้าจอผู้ดูแลยังเสนอตำแหน่ง `account_dtam` / `account_platform` ที่ไม่มีแล้ว** — เลือกแล้วได้บัญชีที่ `normalizeRole()` แปลไม่ออก สร้างสำเร็จแต่ล็อกอินไม่ได้ | สร้างบัญชีตายเงียบ |
+| 4 | `seed-all.js` เรียก seed สองตัวที่ถูกลบ — `pnpm db:seed` พังทันที | คำสั่งในคู่มือพัง |
+| 5 | `jest.config.cjs` ชี้ `jest.globalsetup.js` ที่ถูกลบ — `pnpm test` รันไม่ได้ | เทสรันไม่ได้ |
+| 6 | ผู้ดูแลกรองหาเจ้าหน้าที่บัญชีไม่เจอ (`ROLE_FILTERABLE` ขาด `account`) | สร้างแล้วหาไม่เจอ |
+| 7 | รหัสข้อผิดพลาด 182 ตัวจาก 386 อธิบายเส้นทางที่ไม่มีในระบบนี้ | เอกสารหลอก |
+
+## `coordinator` ไม่เคยเป็นตำแหน่ง
+
+ตรวจในคลังชื่อทั้งสองฝั่ง (`shared/canonical-rbac.js`, `constants/canonical-roles.ts`)
+— ไม่มี · มันเป็นชื่อ**หน้าจอ** และคอมเมนต์ในระบบเต็มเองเขียนว่าเป็น *"legacy dead
+nav key"* ที่เก็บไว้เพราะเทสตรึงไว้ · ตำแหน่งคือ `scheduler` มาตลอด
+
+## คลังชื่อหลังล้าง — สองฝั่งตรงกันเป๊ะ
+
+```
+backend : account admin auditor document_reviewer health platform_admin scheduler system
+frontend: account admin auditor document_reviewer health platform_admin scheduler system
+```
+
+ชื่อสำรองที่แปลตำแหน่งหนึ่งไปเป็นอีกตำแหน่ง (`head_auditor`→auditor,
+`reviewer_auditor`→document_reviewer, `finance_dtam`→account_dtam ฯลฯ) ถูกลบทั้งหมด
+— มันมีไว้รับค่าเก่าในฐานข้อมูลของระบบเต็ม ซึ่ง Lite ไม่มี
+
+## แบ่งหน้าที่แล้วเดินจริง
+
+```
+บัญชียืนยันค่าตรวจเอกสาร   PENDING_DOC_FEE  -> DOC_FEE_PAID     ✓
+คนจัดคิวรับช่วงต่อ          DOC_FEE_PAID     -> ASSIGNED_FOR_REVIEW (เฉพาะ scheduler)
+บัญชียืนยันค่าตรวจแปลง     PENDING_AUDIT_FEE -> AUDIT_FEE_PAID   ✓
+คนจัดคิวรับช่วงต่อ          AUDIT_FEE_PAID   -> AUDIT_CONFIRMED  (เฉพาะ scheduler)
+```
+
+ปฏิเสธถูกต้องทุกกรณี: ผู้ตรวจเอกสาร/คนจัดคิวยืนยันเงินไม่ได้ (`FEE_CONFIRM_FORBIDDEN`)
+บัญชีตัดสินผลตรวจไม่ได้ · ผู้ดูแลเดินไม่ได้สักขั้น (แบ่งแยกหน้าที่ ไม่ใช่บั๊ก)
+
+## เครื่องเฝ้าที่เพิ่ม ไม่ให้สับสนซ้ำ
+
+| เทส | กันอะไร | พิสูจน์ด้วยการกลายพันธุ์ |
+|---|---|---|
+| `web-app/src/lib/__tests__/landing-page-must-exist.test.ts` | landing ชี้ไปหน้าที่ไม่มีอยู่จริง (อ่านระบบไฟล์ ไม่ใช่กติกาสิทธิ์) | ชี้กลับไป `/provider/coordinator` → แดง |
+| `web-app/src/lib/__tests__/role-vocabulary-is-one-list.test.ts` | ตัวเลือกในหน้าจอเป็นตำแหน่งที่ไม่มีจริง · ชื่อสำรองที่แปลข้ามตำแหน่ง | — |
+| `backend/__tests__/unit/role-vocabulary-is-one-list.test.js` | **ทุก edge ในเส้นทางต้องมีเจ้าของ** (จับกรณียุบตำแหน่งแล้วเกิดทางตัน) + แบ่งแยกหน้าที่ | — |
+| `backend/prisma/seed-lite.js` `verifyCanLogIn()` | seed สร้างบัญชีที่ล็อกอินไม่ได้ | — |
+
+ผลรัน: backend 33/33 · frontend 18/18 + 7/7 · `tsc --noEmit` 0 error ·
+`next build` ผ่าน 121 หน้า

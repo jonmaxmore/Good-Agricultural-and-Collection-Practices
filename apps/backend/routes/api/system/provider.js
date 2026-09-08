@@ -213,20 +213,20 @@ router.get('/stats', (req, res) => {
 
 // Get provider roles
 //
-// P0-D: derived from canonical-rbac instead of the old hardcoded 5-entry
-// list that omitted the Tier-16 ACCOUNT_DTAM / ACCOUNT_PLATFORM split.
+// derived from canonical-rbac instead of a hardcoded list, so a role added to the
+// vocabulary shows up here without a second edit.
 // PLATFORM_ADMIN (cross-tenant — never assignable via this tenant-scoped
 // surface) and HEALTH (applicant) are excluded by the isProviderRole /
 // explicit filter below. Response shape preserved for the FE console:
 // value = legacy role enum stored in User.role, label = display string.
 const DIRECTORY_ROLE_LABELS = Object.freeze({
-    [CANONICAL_ROLES.ADMIN]: 'Admin',
-    [CANONICAL_ROLES.DOCUMENT_REVIEWER]: 'Reviewer',
-    [CANONICAL_ROLES.SCHEDULER]: 'Scheduler',
-    [CANONICAL_ROLES.AUDITOR]: 'Auditor',
-    [CANONICAL_ROLES.ACCOUNT_DTAM]: 'Accountant (DTAM)',
-    [CANONICAL_ROLES.ACCOUNT_PLATFORM]: 'Accountant (Platform)',
-    [CANONICAL_ROLES.ACCOUNT]: 'Accountant',
+    [CANONICAL_ROLES.ADMIN]: 'ผู้ดูแลระบบ',
+    [CANONICAL_ROLES.DOCUMENT_REVIEWER]: 'ผู้ตรวจเอกสาร',
+    [CANONICAL_ROLES.SCHEDULER]: 'คนจัดคิว',
+    [CANONICAL_ROLES.AUDITOR]: 'ผู้ตรวจแปลง',
+    // GACP Lite มีฝ่ายบัญชีตำแหน่งเดียว — คู่ DTAM/PLATFORM ของระบบเต็มมีเพราะสอง
+    // องค์กรออกเอกสารคนละชุด ซึ่งไม่มีที่นี่
+    [CANONICAL_ROLES.ACCOUNT]: 'บัญชี',
 });
 
 const PROVIDER_ASSIGNABLE_ROLES = Object.freeze(

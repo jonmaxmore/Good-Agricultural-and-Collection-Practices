@@ -62,9 +62,11 @@ export interface AdminRoleOption {
 }
 
 /**
- * All 9 canonical roles in a fixed display order (most-used first; legacy
- * + system grouped at the end). Frozen so callers cannot mutate the
- * exported array.
+ * ตำแหน่งทั้งหมดที่ผู้ดูแลเลือกให้บัญชีหนึ่งได้ · เรียงตามที่ใช้บ่อย
+ *
+ * ทุกตัวเลือกในลิสต์นี้ต้องมีอยู่จริงใน CANONICAL_ROLES — ตัวเลือกที่ normalizeRole()
+ * แปลไม่ออกจะสร้างบัญชีที่ล็อกอินไม่ได้ และผู้ดูแลจะไม่รู้ว่าทำไม
+ * เทสที่กันเรื่องนี้: __tests__/role-options-must-be-real.test.ts
  */
 export const ADMIN_ROLE_OPTIONS: ReadonlyArray<AdminRoleOption> = Object.freeze([
     Object.freeze({
@@ -75,7 +77,7 @@ export const ADMIN_ROLE_OPTIONS: ReadonlyArray<AdminRoleOption> = Object.freeze(
     Object.freeze({
         value: 'AUDITOR',
         canonical: 'auditor',
-        label: 'ผู้ตรวจประเมิน',
+        label: 'ผู้ตรวจแปลง',
     }),
     Object.freeze({
         value: 'DOCUMENT_REVIEWER',
@@ -85,23 +87,12 @@ export const ADMIN_ROLE_OPTIONS: ReadonlyArray<AdminRoleOption> = Object.freeze(
     Object.freeze({
         value: 'SCHEDULER',
         canonical: 'scheduler',
-        label: 'ผู้จัดตาราง',
-    }),
-    Object.freeze({
-        value: 'ACCOUNT_DTAM',
-        canonical: 'account_dtam',
-        label: 'นักบัญชี (รายได้แผ่นดิน)',
-    }),
-    Object.freeze({
-        value: 'ACCOUNT_PLATFORM',
-        canonical: 'account_platform',
-        label: 'นักบัญชี (แพลตฟอร์ม)',
+        label: 'คนจัดคิว',
     }),
     Object.freeze({
         value: 'ACCOUNT',
         canonical: 'account',
-        label: 'นักบัญชี (เลิกใช้ กรุณาเปลี่ยนเป็น ACCOUNT_DTAM/PLATFORM)',
-        isLegacy: true,
+        label: 'บัญชี',
     }),
     Object.freeze({
         value: 'HEALTH',

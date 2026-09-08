@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils';
  * Local ROLE_OPTIONS — to be replaced by import from
  * `@/lib/constants/admin-role-options` when V5-A lands. The list
  * mirrors `canonical-roles.ts` plus the two Tier 16 split roles
- * (ACCOUNT_DTAM, ACCOUNT_PLATFORM) that V5-A also adds to
+ * GACP Lite มีฝ่ายบัญชีตำแหน่งเดียว — รายการนี้ต้องตรงกับ
  * /admin/users page-level filters.
  */
 /**
@@ -58,10 +58,8 @@ const ROLE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
     { value: 'ADMIN', label: 'ผู้ดูแลระบบ (ADMIN)' },
     { value: 'AUDITOR', label: 'ผู้ตรวจประเมิน (AUDITOR)' },
     { value: 'DOCUMENT_REVIEWER', label: 'ผู้ตรวจเอกสาร (DOCUMENT_REVIEWER)' },
-    { value: 'SCHEDULER', label: 'ผู้จัดตาราง (SCHEDULER)' },
-    { value: 'ACCOUNT_DTAM', label: 'นักบัญชี (รายได้แผ่นดิน) (ACCOUNT_DTAM)' },
-    { value: 'ACCOUNT_PLATFORM', label: 'นักบัญชี (แพลตฟอร์ม) (ACCOUNT_PLATFORM)' },
-    { value: 'ACCOUNT', label: 'นักบัญชี (เลกาซี เลิกใช้) (ACCOUNT)' },
+    { value: 'SCHEDULER', label: 'คนจัดคิว (SCHEDULER)' },
+    { value: 'ACCOUNT', label: 'บัญชี (ACCOUNT)' },
     { value: 'HEALTH', label: 'ผู้ขอใบรับรอง (HEALTH)' },
 ];
 

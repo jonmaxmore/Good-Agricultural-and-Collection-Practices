@@ -14,20 +14,13 @@
  *     - supplementary_criteria                                   ← seed-criteria.js
  *     - plant_species + document_requirements                    ← seed-plants.js
  *     - wizard_step_configs    (the 9-step application wizard)   ← seed-wizard.js
- *     - receipt_sequences      (billing counters)                ← seed-receipt-sequences.js
  *   …which silently breaks the applicant wizard, plant/standard pickers and
  *   receipt numbering. This orchestrator runs exactly those config seeds, in
  *   dependency-safe order, as part of the deploy.
  *
  * WHAT IT DELIBERATELY DOES NOT RUN
- *   - seed-gacp.js          — bootstraps the default org + admin/staff users,
- *                             but its upserts RESET seeded users' passwords on
- *                             every run. That is fine as a one-time bootstrap
- *                             (`npx prisma db seed`) but must never run on every
- *                             release, so it is excluded here.
- *   - seed-real-fees.js / seed-approve.js / seed-test-*.js — these are DEMO data
- *                             generators (they create fake applications /
- *                             certificates). They must never touch production.
+ *   - seed-lite.js          — หน่วยงานและบัญชีเจ้าหน้าที่ตั้งต้น · รันครั้งเดียวตอนติดตั้ง
+ *                             ไม่ใช่ทุกรอบ deploy เพราะมันตั้งรหัสผ่าน
  *
  * SAFETY
  *   - First-run guard: if the config tables are already populated the script is
@@ -62,8 +55,9 @@ const CONFIG_SEEDS = [
   'seed-criteria.js',
   'seed-plants.js',
   'seed-wizard.js',
-  'seed-receipt-sequences.js',
-  'seed-chart-of-accounts.js',
+  // seed-receipt-sequences / seed-chart-of-accounts ถูกตัดออกพร้อมระบบบัญชี —
+  // GACP Lite ไม่ออกใบเสร็จและไม่มีผังบัญชี · ทิ้งชื่อไว้ในลิสต์นี้แปลว่า
+  // `pnpm db:seed` จะพังทันทีที่ลูกค้ารันครั้งแรก
 ];
 
 // Sentinel counts — if ALL are non-zero the DB is already configured and we

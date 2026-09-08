@@ -16,6 +16,7 @@
 
 'use strict';
 
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 
@@ -38,14 +39,26 @@ async function seedOrganization() {
     return org;
 }
 
+/**
+ * บัญชีผู้ดูแลคนแรก
+ *
+ * ต้องเขียนสี่อย่างให้ครบ ไม่ใช่แค่ role — ประตูล็อกอินของเจ้าหน้าที่
+ * (routes/api/auth/auth-provider.js) ค้นด้วย **providerIdHash** ไม่ใช่ providerId
+ * และปฏิเสธบัญชีที่ accountType ไม่ใช่ PROVIDER · seed รุ่นแรกเขียนแค่ role กับ
+ * password ผลคือสร้างผู้ดูแลได้แต่ล็อกอินไม่ได้ ซึ่งแปลว่าระบบที่ติดตั้งเสร็จแล้ว
+ * ไม่มีใครเข้าได้เลย · เทสที่กันไม่ให้เกิดซ้ำอยู่ที่ท้ายไฟล์นี้ (verifyCanLogIn)
+ */
 async function seedInitialAdmin(organizationId) {
-    const identifier = process.env.ADMIN_IDENTIFIER;
+    const identifier = String(process.env.ADMIN_IDENTIFIER || '').replace(/\D/g, '');
     const password = process.env.ADMIN_INITIAL_PASSWORD;
 
     if (!identifier || !password) {
         console.log('[seed] ข้ามการสร้างผู้ดูแล — ยังไม่ได้ตั้ง ADMIN_IDENTIFIER + ADMIN_INITIAL_PASSWORD');
         console.log('[seed] ตั้งสองค่านี้แล้วรัน `pnpm db:seed` อีกครั้งเมื่อพร้อม');
         return null;
+    }
+    if (identifier.length !== 13) {
+        throw new Error('[seed] ADMIN_IDENTIFIER ต้องเป็นเลขบัตรประชาชน 13 หลัก');
     }
     if (password.length < 12) {
         throw new Error('[seed] ADMIN_INITIAL_PASSWORD ต้องยาวอย่างน้อย 12 ตัวอักษร');
@@ -62,6 +75,11 @@ async function seedInitialAdmin(organizationId) {
             organizationId,
             canonicalId: identifier,
             providerId: identifier,
+            // คอลัมน์ที่ประตูล็อกอินค้นจริง — ไม่มีค่านี้ = บัญชีมีอยู่แต่หาไม่เจอ
+            providerIdHash: crypto.createHash('sha256').update(identifier).digest('hex'),
+            // ประตูเจ้าหน้าที่ปฏิเสธทุกบัญชีที่ไม่ใช่ PROVIDER
+            accountType: 'PROVIDER',
+            authType: 'PROVIDER_ID',
             password: await bcrypt.hash(password, 12),
             firstName: 'ผู้ดูแล',
             lastName: 'ระบบ',
@@ -73,9 +91,35 @@ async function seedInitialAdmin(organizationId) {
     return admin;
 }
 
+/**
+ * ตรวจว่าบัญชีที่เพิ่งสร้าง "ล็อกอินได้จริง" ไม่ใช่แค่ "มีอยู่ในตาราง"
+ *
+ * เทียบด้วยเงื่อนไขเดียวกับที่ประตูล็อกอินใช้ ถ้าวันหนึ่งประตูเปลี่ยนคอลัมน์ค้นหา
+ * seed จะดังตรงนี้แทนที่จะเงียบแล้วปล่อยให้ลูกค้าไปเจอเอง
+ */
+async function verifyCanLogIn(user) {
+    if (!user) { return; }
+    const found = await prisma.user.findFirst({
+        where: {
+            providerIdHash: crypto.createHash('sha256').update(user.canonicalId).digest('hex'),
+            status: 'ACTIVE',
+        },
+        select: { id: true, accountType: true },
+    });
+    if (!found) {
+        throw new Error('[seed] บัญชีผู้ดูแลถูกสร้างแล้วแต่ประตูล็อกอินหาไม่เจอ — '
+            + 'ตรวจ providerIdHash ใน seed ให้ตรงกับ routes/api/auth/auth-provider.js');
+    }
+    if (String(found.accountType).toUpperCase() !== 'PROVIDER') {
+        throw new Error('[seed] บัญชีผู้ดูแล accountType ไม่ใช่ PROVIDER — ประตูเจ้าหน้าที่จะปฏิเสธ');
+    }
+    console.log('[seed] ตรวจแล้ว: ผู้ดูแลล็อกอินได้จริง');
+}
+
 async function main() {
     const org = await seedOrganization();
-    await seedInitialAdmin(org.id);
+    const admin = await seedInitialAdmin(org.id);
+    await verifyCanLogIn(admin);
 }
 
 main()

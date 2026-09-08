@@ -194,14 +194,12 @@ export default function ProviderDashboardPage() {
       // truth (provider-role-config.ts), which guarantees each role is sent only
       // to a route it can actually enter (landing-route-coherence.test.ts). This
       // replaces the hardcoded switch that was the untested 3rd role-config source.
-      //   scheduler → /provider/coordinator; auditor → /provider/audits;
-      //   document_reviewer → /provider/reviewer (B5 — its own launchpad);
-      //   account_dtam → /provider/accounting/dtam; account_platform →
-      //     /provider/accounting/platform (B5 — each side owns a dedicated URL;
-      //     the dashboard content is the same, side-filtered by the token).
-      //   admin / legacy account → /provider/home (Task 7, N1 — tile home
-      //     replaces this page as the universal landing). unknown → null →
-      //     stay on the generic dashboard.
+      //   scheduler → /provider/scheduler/queue; auditor → /provider/audits;
+      //   document_reviewer → /provider/reviewer; account → /provider/accounting
+      //   admin → /provider/home (tile home). unknown → null → stay here.
+      //
+      // GACP Lite: ไม่มี /provider/coordinator (หน้านั้นถูกตัดออก) และไม่มีคู่
+      // account_dtam / account_platform — ฝ่ายบัญชีมีตำแหน่งเดียว
       const landing = providerLandingPath(normalized.canonicalRole || normalized.role);
       if (landing) {
         router.replace(landing);

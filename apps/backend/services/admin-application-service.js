@@ -77,7 +77,7 @@ const FORCE_STATUS_ALLOWED_REASON_CODES = new Set([
     // Waiver-reopen fence break-glass (owner ruling 2026-07-08): the ONLY
     // admin way to exit EXPIRED — reserved for when the waiver-reopen flow
     // itself is broken. Loudly audited (the in-tx audit hook records the
-    // reasonCode); routine reopens MUST use the inspector→ACCOUNT_DTAM flow.
+    // reasonCode); routine reopens MUST use the inspector→ACCOUNT flow.
     'BREAK_GLASS_REOPEN',
 ]);
 

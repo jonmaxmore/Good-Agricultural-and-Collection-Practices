@@ -49,11 +49,8 @@ export interface ProviderArea {
   /** post-login landing: roles auto-routed to `path` from the generic dashboard */
   landing?: { roles: readonly string[]; path: string };
   /**
-   * Multiple post-login landings for one area. Used by the accounting area
-   * (B5) to send ACCOUNT_DTAM → /provider/accounting/dtam and
-   * ACCOUNT_PLATFORM → /provider/accounting/platform from a single area.
-   * Flattened into PROVIDER_LANDING alongside `landing`. Each entry is still
-   * coherence-guarded (landing ∈ allowed routes).
+   * หลาย landing ในพื้นที่เดียว · ไม่มีพื้นที่ไหนใน Lite ใช้แล้ว (เดิมใช้แยกฝั่ง
+   * บัญชี DTAM/PLATFORM) แต่กลไกยังอยู่เผื่อพื้นที่ที่ต้องแยกตามตำแหน่งในอนาคต
    */
   landings?: ReadonlyArray<{ roles: readonly string[]; path: string }>;
 }
@@ -80,7 +77,11 @@ export const PROVIDER_AREAS: readonly ProviderArea[] = [
     // (ADMIN ∈ [ADMIN]) so nav-middleware-coherence stays green; ADMIN bypasses
     // every per-prefix rule in decideProviderRouteAccess.
     navRules: [{ key: 'admin-console', roles: [R.ADMIN] }],
-    landing: { roles: [R.PLATFORM_ADMIN], path: '/admin/organizations' },
+    // เดิมพาไป /admin/organizations ซึ่งเป็นหน้าจัดการหลายหน่วยงาน · GACP Lite มี
+    // หน่วยงานเดียวตรึงไว้ หน้านั้นจึงถูกตัดออก และ platform_admin กับ admin เป็นงาน
+    // เดียวกันที่นี่ · ตัวตำแหน่งยังอยู่ในคลังชื่อ (โค้ดฝั่ง backend อ้างถึงอีก 4 ไฟล์)
+    // แต่ไม่มีพื้นที่พิเศษให้ลงอีกแล้ว
+    landing: { roles: [R.PLATFORM_ADMIN], path: '/provider/home' },
   },
   {
     id: 'applications',
@@ -102,49 +103,28 @@ export const PROVIDER_AREAS: readonly ProviderArea[] = [
   },
   {
     id: 'accounting',
-    // B5 ("different departments → different pages"): each ACCOUNT side now owns a
-    // dedicated landing URL. The per-side prefixes MUST precede the bare
-    // /provider/accounting (the projection is consumed first-match-wins) so the DTAM
-    // accountant is admitted to /provider/accounting/dtam (and bounced from the
-    // platform sibling) and vice-versa, while ADMIN reaches everything by bypass.
-    //   - /provider/accounting/dtam     → [ADMIN, ACCOUNT_DTAM]
-    //   - /provider/accounting/platform → [ADMIN, ACCOUNT_PLATFORM]
-    // The bare /provider/accounting stays admitted to ADMIN/ACCOUNT_DTAM/
-    // ACCOUNT_PLATFORM/legacy ACCOUNT/AUDITOR for both-sides + URL access; the
-    // two-money-flow side wall itself is enforced by the token + backend, NOT here.
-    // Auditor can reach /accounting + /receipts by URL (settlement review) but the
-    // nav link is intentionally hidden from them — hence route roles ⊃ nav roles.
+    // GACP Lite มีฝ่ายบัญชีตำแหน่งเดียว ไม่ใช่คู่ DTAM/PLATFORM ของระบบเต็ม —
+    // การแยกนั้นมีเพราะสององค์กรออกเอกสารคนละชุดบนบัญชีคนละเล่ม · Lite มีองค์กรเดียว
+    // และไม่ออกเอกสารการเงินเลย งานที่เหลือคือบอกว่าเงินเข้าแล้ว ซึ่งเป็นงานเดียว
+    //
+    // /provider/receipts ไม่มีใน Lite (ไม่มีใบเสร็จ) จึงไม่อยู่ในตารางนี้ — เส้นทาง
+    // ที่ไม่มีหน้าอยู่จริงแต่ยังประกาศสิทธิ์ไว้ คือคำสัญญาที่พาไปหน้า 404
     routes: [
-      { prefix: '/provider/accounting/dtam', roles: [R.ADMIN, R.ACCOUNT_DTAM] },
-      { prefix: '/provider/accounting/platform', roles: [R.ADMIN, R.ACCOUNT_PLATFORM] },
-      { prefix: '/provider/accounting', roles: [R.ADMIN, R.ACCOUNT_DTAM, R.ACCOUNT_PLATFORM, R.ACCOUNT, R.AUDITOR] },
-      { prefix: '/provider/receipts', roles: [R.ADMIN, R.ACCOUNT_DTAM, R.ACCOUNT_PLATFORM, R.ACCOUNT, R.AUDITOR] },
+      { prefix: '/provider/accounting', roles: [R.ADMIN, R.ACCOUNT] },
     ],
-    navRules: [{ key: 'accounting', roles: [R.ADMIN, R.ACCOUNT, R.ACCOUNT_DTAM, R.ACCOUNT_PLATFORM] }],
-    // B5: split the single both-sides landing into two per-side landings so each
-    // department auto-routes to its own page after login (legacy ACCOUNT keeps no
-    // landing → stays on the generic dashboard, migration-window safety).
-    landings: [
-      { roles: [R.ACCOUNT_DTAM], path: '/provider/accounting/dtam' },
-      { roles: [R.ACCOUNT_PLATFORM], path: '/provider/accounting/platform' },
-    ],
+    navRules: [{ key: 'accounting', roles: [R.ADMIN, R.ACCOUNT] }],
+    landing: { roles: [R.ACCOUNT], path: '/provider/accounting' },
   },
   {
     id: 'scheduling',
     routes: [
       { prefix: '/provider/calendar', roles: [R.ADMIN, R.SCHEDULER] },
       { prefix: '/provider/scheduler', roles: [R.ADMIN, R.SCHEDULER] },
-      // P2-2: the scheduler auto-routes here on login; gate the route so other
-      // provider roles can't reach it by URL (was rule-less = open).
-      { prefix: '/provider/coordinator', roles: [R.ADMIN, R.SCHEDULER] },
     ],
-    // `calendar` = the real nav item; `coordinator` = a legacy dead nav key (no
-    // providerNavigation item) kept for byte-equality with the old NAV_ROLE_RULES.
-    navRules: [
-      { key: 'calendar', roles: [R.ADMIN, R.SCHEDULER] },
-      { key: 'coordinator', roles: [R.ADMIN, R.SCHEDULER] },
-    ],
-    landing: { roles: [R.SCHEDULER], path: '/provider/coordinator' },
+    navRules: [{ key: 'calendar', roles: [R.ADMIN, R.SCHEDULER] }],
+    // เดิมพาไป /provider/coordinator ซึ่งไม่มีใน Lite — คนจัดคิวล็อกอินแล้วเจอ 404
+    // ทันที · หน้าที่ทำงานได้จริงคือคิวมอบหมายผู้ตรวจ ซึ่งเป็นสิ่งแรกที่เขาต้องดูอยู่แล้ว
+    landing: { roles: [R.SCHEDULER], path: '/provider/scheduler/queue' },
   },
   {
     id: 'audits',
@@ -159,7 +139,7 @@ export const PROVIDER_AREAS: readonly ProviderArea[] = [
     // สัญญา C05F680149 ต้นแบบที่ 6 (ตรวจสอบและประเมินภาพ 3 โมดูล): ทุก endpoint
     // /api/image-assessment/* — รวม /catalog อ่านอย่างเดียว — gated ด้วย
     // ROLE_GROUPS.AUDIT_STAFF (routes/api/audit/image-assessment.js). เดิม nav ไม่มี
-    // rule → ACCOUNT_DTAM/ACCOUNT_PLATFORM/legacy ACCOUNT/PLATFORM_ADMIN เห็นเมนู
+    // rule → ACCOUNT/PLATFORM_ADMIN เห็นเมนู
     // "ตรวจประเมินภาพ" แต่ทุก call 403 = หน้าตาย. ซ่อน nav ให้ตรง backend
     // (AUDIT_STAFF = ADMIN/DOCUMENT_REVIEWER/AUDITOR/SCHEDULER). ไม่ตั้ง route rule —
     // ปล่อย default-allow (backend 403 คุมจริง); nav ⊆ route ยังคงจริง.
@@ -188,11 +168,11 @@ export const PROVIDER_AREAS: readonly ProviderArea[] = [
     id: 'analytics',
     routes: [{
       prefix: '/provider/analytics',
-      roles: [R.ADMIN, R.DOCUMENT_REVIEWER, R.AUDITOR, R.ACCOUNT, R.ACCOUNT_DTAM, R.ACCOUNT_PLATFORM],
+      roles: [R.ADMIN, R.DOCUMENT_REVIEWER, R.AUDITOR, R.ACCOUNT],
     }],
     navRules: [{
       key: 'analytics',
-      roles: [R.ADMIN, R.DOCUMENT_REVIEWER, R.AUDITOR, R.ACCOUNT, R.ACCOUNT_DTAM, R.ACCOUNT_PLATFORM],
+      roles: [R.ADMIN, R.DOCUMENT_REVIEWER, R.AUDITOR, R.ACCOUNT],
     }],
   },
   {
@@ -245,20 +225,16 @@ export const PROVIDER_AREAS: readonly ProviderArea[] = [
   },
   {
     id: 'tile-home-landing',
-    // Task 7 (tile-home-nav, N1/N7): ADMIN and legacy ACCOUNT had no area
-    // above with a `landing` entry, so providerLandingPath fell through to
-    // null and both roles landed on the pre-tile-home /provider/dashboard
-    // (~600-line legacy page) after login. N1 — "ใช้ tile home กับทุก role
-    // ทั้งระบบ" — makes /provider/home the universal landing surface; these
-    // two roles now get it like every other provider role. (platform_admin
-    // is untouched: its landing already points at /admin/organizations, its
-    // only entitled surface — not the dashboard.)
+    // ผู้ดูแลระบบไม่มีคิวงานของตัวเอง จึงลงที่หน้ารวม
     //
-    // No `routes` entry is added: /provider/home is an UNLISTED /provider/*
-    // path, which decideProviderRouteAccess treats as default-allow for any
-    // valid provider role — so landing-route-coherence's "landing ∈ allowed
-    // routes" guard holds without widening PROVIDER_ROUTE_ROLE_RULES.
-    landing: { roles: [R.ADMIN, R.ACCOUNT], path: '/provider/home' },
+    // เดิมบรรทัดนี้ครอบ ACCOUNT ด้วย เพราะตอนนั้นฝ่ายบัญชียังไม่มีหน้าของตัวเอง
+    // ตอนนี้มีแล้ว (/provider/accounting) และ providerLandingPath ใช้ first-match-wins
+    // การทิ้ง ACCOUNT ไว้ตรงนี้จึงเป็นคำตอบที่สองสำหรับคำถามเดียว — เงียบวันนี้เพราะ
+    // ลำดับบังเอิญถูก และจะกลายเป็นบั๊กวันที่มีคนสลับลำดับ area
+    //
+    // ไม่ต้องมี `routes`: /provider/home เป็นเส้นทางที่ไม่ได้ประกาศไว้ ซึ่ง
+    // decideProviderRouteAccess ปล่อยผ่านให้ทุก provider role อยู่แล้ว
+    landing: { roles: [R.ADMIN], path: '/provider/home' },
   },
 ];
 

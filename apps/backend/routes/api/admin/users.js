@@ -71,6 +71,9 @@ function roleFilterFromCanonical(canonicalRole) {
         CANONICAL_ROLES.SCHEDULER,
         CANONICAL_ROLES.DOCUMENT_REVIEWER,
         CANONICAL_ROLES.AUDITOR,
+        // ฝ่ายบัญชีหายจากลิสต์นี้ตั้งแต่ตอนตัดระบบเป็น Lite · ผลคือ admin สร้างเจ้าหน้าที่
+        // บัญชีได้ แต่กรองหาไม่เจอ — บัญชีมีอยู่จริงแต่มองไม่เห็นผ่านหน้าจอเดียวที่มี
+        CANONICAL_ROLES.ACCOUNT,
     ];
     return ROLE_FILTERABLE.includes(canonicalRole) ? { equals: canonicalRole } : undefined;
 }

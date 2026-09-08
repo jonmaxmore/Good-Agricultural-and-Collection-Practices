@@ -117,22 +117,6 @@ const CANONICAL_ROLE_PERMISSIONS: Record<string, Permission[]> = {
     // permissions; the per-side gate happens server-side. From the
     // web app's perspective both roles can see the accounting
     // dashboard — they just see different data inside it.
-    [CANONICAL_ROLES.ACCOUNT_DTAM]: [
-        PERMISSIONS.VIEW_APPLICATIONS,
-        PERMISSIONS.VIEW_INVOICES,
-        PERMISSIONS.CREATE_INVOICES,
-        PERMISSIONS.CONFIRM_PAYMENTS,
-        PERMISSIONS.VIEW_REPORTS,
-        PERMISSIONS.EXPORT_REPORTS,
-    ],
-    [CANONICAL_ROLES.ACCOUNT_PLATFORM]: [
-        PERMISSIONS.VIEW_APPLICATIONS,
-        PERMISSIONS.VIEW_INVOICES,
-        PERMISSIONS.CREATE_INVOICES,
-        PERMISSIONS.CONFIRM_PAYMENTS,
-        PERMISSIONS.VIEW_REPORTS,
-        PERMISSIONS.EXPORT_REPORTS,
-    ],
     [CANONICAL_ROLES.ADMIN]: [
         ...Object.values(PERMISSIONS),
     ],
@@ -170,8 +154,6 @@ export function canManageRole(managerRole: string, targetRole: string): boolean 
         [CANONICAL_ROLES.SCHEDULER]: 1,
         // Tier 16: both split accounting roles + legacy ACCOUNT sit
         // at the same staff level.
-        [CANONICAL_ROLES.ACCOUNT_DTAM]: 1,
-        [CANONICAL_ROLES.ACCOUNT_PLATFORM]: 1,
         [CANONICAL_ROLES.ACCOUNT]: 1,
         [CANONICAL_ROLES.ADMIN]: 3,
     };
@@ -193,8 +175,6 @@ export function getRoleDisplayName(role: string): string {
         // Tier 16 split — Thai labels match the org-chart used by
         // DTAM accounting (กรมการแพทย์แผนไทยฯ) and the platform's
         // commercial accounting team.
-        [CANONICAL_ROLES.ACCOUNT_DTAM]: 'บัญชี DTAM',
-        [CANONICAL_ROLES.ACCOUNT_PLATFORM]: 'บัญชี Platform',
         [CANONICAL_ROLES.ACCOUNT]: 'เจ้าหน้าที่การเงิน',
         [CANONICAL_ROLES.ADMIN]: 'ผู้ดูแลระบบ',
     };
@@ -255,8 +235,6 @@ export const ROLE_LABELS_TH: Record<string, string> = {
     [CANONICAL_ROLES.DOCUMENT_REVIEWER]: 'ผู้ตรวจเอกสาร/ตรวจประเมิน',
     [CANONICAL_ROLES.AUDITOR]: 'ผู้ตรวจประเมิน',
     [CANONICAL_ROLES.SCHEDULER]: 'ผู้จัดตารางนัดหมาย',
-    [CANONICAL_ROLES.ACCOUNT_DTAM]: 'บัญชี DTAM',
-    [CANONICAL_ROLES.ACCOUNT_PLATFORM]: 'บัญชี Platform',
     [CANONICAL_ROLES.ACCOUNT]: 'เจ้าหน้าที่การเงิน',
     [CANONICAL_ROLES.ADMIN]: 'ผู้ดูแลระบบ',
     [CANONICAL_ROLES.PLATFORM_ADMIN]: 'ผู้ดูแลแพลตฟอร์ม',
@@ -268,8 +246,6 @@ export const ROLE_LABELS_EN: Record<string, string> = {
     [CANONICAL_ROLES.DOCUMENT_REVIEWER]: 'Document Reviewer',
     [CANONICAL_ROLES.AUDITOR]: 'Auditor',
     [CANONICAL_ROLES.SCHEDULER]: 'Scheduler',
-    [CANONICAL_ROLES.ACCOUNT_DTAM]: 'DTAM Accountant',
-    [CANONICAL_ROLES.ACCOUNT_PLATFORM]: 'Platform Accountant',
     [CANONICAL_ROLES.ACCOUNT]: 'Accountant',
     [CANONICAL_ROLES.ADMIN]: 'System Administrator',
     [CANONICAL_ROLES.PLATFORM_ADMIN]: 'Platform Administrator',
@@ -279,8 +255,6 @@ export const ROLE_LABELS_EN: Record<string, string> = {
 export const ROLE_LABELS_WITH_ICON: Record<string, { label: string; icon: string }> = {
     [CANONICAL_ROLES.DOCUMENT_REVIEWER]: { label: 'ผู้ตรวจเอกสาร/ตรวจประเมิน', icon: '📋' },
     [CANONICAL_ROLES.SCHEDULER]: { label: 'ผู้จัดตารางนัดหมาย', icon: '📆' },
-    [CANONICAL_ROLES.ACCOUNT_DTAM]: { label: 'บัญชี DTAM', icon: '🏛️' },
-    [CANONICAL_ROLES.ACCOUNT_PLATFORM]: { label: 'บัญชี Platform', icon: '💼' },
     [CANONICAL_ROLES.ACCOUNT]: { label: 'เจ้าหน้าที่การเงิน', icon: '💰' },
     [CANONICAL_ROLES.AUDITOR]: { label: 'ผู้ตรวจประเมิน', icon: '🔍' },
     [CANONICAL_ROLES.ADMIN]: { label: 'ผู้ดูแลระบบ', icon: '⚙️' },
@@ -297,8 +271,6 @@ export const ROLE_COLORS: Record<string, string> = {
     // Tier 16: distinguish the two accounting sides by color so the
     // role-badge in the topbar tells finance staff at a glance which
     // queue they are working in.
-    [CANONICAL_ROLES.ACCOUNT_DTAM]: 'orange',
-    [CANONICAL_ROLES.ACCOUNT_PLATFORM]: 'teal',
     [CANONICAL_ROLES.ACCOUNT]: 'teal',
 };
 

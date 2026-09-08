@@ -27,8 +27,8 @@
  *   2. ASSIGNMENT-SCOPED — `auditor`, `document_reviewer`. Unchanged: each
  *      sees only the applications assigned to it.
  *
- *   3. WORK-POOL-SCOPED — `scheduler`, `account`, `account_dtam`,
- *      `account_platform`. These roles do work a tenant-wide pool, but only a
+ *   3. WORK-POOL-SCOPED — `scheduler` และ `account` · สองตำแหน่งนี้ทำงานจากกองงาน
+ *      ของทั้งหน่วยงาน แต่เห็นเฉพาะ
  *      *slice* of the lifecycle. The slice is DERIVED, not hand-listed: it is
  *      the set of states named by that role's own rows in `ROLE_TRANSITIONS`
  *      (services/workflow-transition-service.js:99-139) — the states it can
@@ -84,8 +84,6 @@ const UNRESTRICTED_ROLES = new Set([
 const WORK_POOL_ROLES = new Set([
     CANONICAL_ROLES.SCHEDULER,
     CANONICAL_ROLES.ACCOUNT,
-    CANONICAL_ROLES.ACCOUNT_DTAM,
-    CANONICAL_ROLES.ACCOUNT_PLATFORM,
 ]);
 
 /**

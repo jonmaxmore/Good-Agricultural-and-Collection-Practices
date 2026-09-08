@@ -97,19 +97,38 @@ const ROLE_TRANSITIONS = Object.freeze({
     'REVISION_REQUESTED->ASSIGNED_FOR_REVIEW',
     'CAR_PENDING->CAR_REVIEWING',
   ]),
-  // Lite has no accountant and no scheduler. The officer who owns the next step
-  // is the one who records that its fee arrived — operator ruling 2026-09-08,
-  // "เจ้าหน้าที่กดยืนยันเอง". Phase 1 belongs to the document reviewer, phase 2
-  // to the field auditor, so neither can move the other's half of the pipeline.
-  [CANONICAL_ROLES.DOCUMENT_REVIEWER]: new Set([
+  // ── บัญชี ────────────────────────────────────────────────────────────────
+  // The only role that may say money arrived. Lite has no payment gateway, so this
+  // is a human judgement, not a webhook — and it must not sit with the people whose
+  // work it unlocks. A reviewer who can both record the fee and approve the papers
+  // holds the whole gate alone; that is the separation the accounting desk exists
+  // for, and it survives the fact that Lite issues no invoice.
+  //
+  // ตำแหน่งเดียว ไม่ใช่คู่แยกฝั่งแบบระบบเต็ม — การแยกนั้นมีเพราะสององค์กรออกเอกสาร
+  // คนละชุดบนบัญชีคนละเล่ม ซึ่งไม่มีที่นี่ (ดู shared/canonical-rbac.js หัวไฟล์)
+  [CANONICAL_ROLES.ACCOUNT]: new Set([
     'PENDING_DOC_FEE->DOC_FEE_PAID',
+    'PENDING_AUDIT_FEE->AUDIT_FEE_PAID',
+  ]),
+  // ── คนจัดคิว ─────────────────────────────────────────────────────────────
+  // Owns the two hand-offs: which reviewer gets this filing, and when the on-site
+  // inspection happens. Its screens are live in Lite
+  // (apps/web-app/src/app/provider/scheduler/{queue,workload,reassign,reviewer-reassign})
+  // and routes/api/audit/scheduling.js is mounted — only this grant was missing,
+  // which left those screens able to show work nobody could move.
+  [CANONICAL_ROLES.SCHEDULER]: new Set([
     'DOC_FEE_PAID->ASSIGNED_FOR_REVIEW',
+    'AUDIT_FEE_PAID->AUDIT_CONFIRMED',
+  ]),
+  // ── ผู้ตรวจเอกสาร ────────────────────────────────────────────────────────
+  // Judges the papers, and nothing else. Not the money (accounting), not the queue
+  // (scheduler), not the field (auditor).
+  [CANONICAL_ROLES.DOCUMENT_REVIEWER]: new Set([
     'ASSIGNED_FOR_REVIEW->DOC_APPROVED',
     'ASSIGNED_FOR_REVIEW->REVISION_REQUESTED',
   ]),
+  // ── ผู้ตรวจแปลง ──────────────────────────────────────────────────────────
   [CANONICAL_ROLES.AUDITOR]: new Set([
-    'PENDING_AUDIT_FEE->AUDIT_FEE_PAID',
-    'AUDIT_FEE_PAID->AUDIT_CONFIRMED',
     'ASSIGNED_FOR_REVIEW->DOC_APPROVED',
     'ASSIGNED_FOR_REVIEW->REVISION_REQUESTED',
     'AUDIT_CONFIRMED->AUDIT_PASSED',
@@ -117,7 +136,7 @@ const ROLE_TRANSITIONS = Object.freeze({
     'AUDIT_CONFIRMED->REJECTED',
     'CAR_REVIEWING->AUDIT_PASSED',
     'CAR_REVIEWING->CAR_PENDING',
-    'AUDIT_PASSED->APPROVED', // Consolidated from HEAD_AUDITOR
+    'AUDIT_PASSED->APPROVED',
     'AUDIT_PASSED->CAR_REVIEWING', // auditor reverses a premature pass; voids the issued cert
     // Product decision (2026-06-05): single-auditor auto-issue. The on-site auditor
     // who records the PASS issues the certificate directly — the cert is auto-minted
@@ -127,7 +146,6 @@ const ROLE_TRANSITIONS = Object.freeze({
     // auditor and NO approver≠evaluator constraint (admin is not in the workflow).
     'APPROVED->CERTIFIED',
   ]),
-  // HEAD_AUDITOR transitions removed — consolidated into AUDITOR above
   //
   // WF-F4: SYSTEM is the non-human actor for automatic advances (post-submit
   // billing chain) and cron-driven expiry. The canonical workflow dictionary

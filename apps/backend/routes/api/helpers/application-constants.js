@@ -213,7 +213,6 @@ assertDisplayMapsAreTotal();
 const AUDITOR_ROLES = new Set([
     CANONICAL_ROLES.DOCUMENT_REVIEWER,
     CANONICAL_ROLES.AUDITOR,
-    // HEAD_AUDITOR removed — consolidated into AUDITOR
 ]);
 
 const REJECTABLE_STATUSES = new Set(['ASSIGNED_FOR_REVIEW', 'CAR_REVIEWING']);

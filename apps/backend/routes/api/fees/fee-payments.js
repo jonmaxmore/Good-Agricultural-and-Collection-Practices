@@ -51,6 +51,55 @@ const PHASES = Object.freeze({
 });
 
 /**
+ * GET /api/fees/pending — คิวงานของฝ่ายบัญชี
+ *
+ * คำขอทุกใบที่ยืนอยู่ที่ประตูค่าธรรมเนียม รอให้คนบอกว่าเงินเข้าแล้ว · เรียงจากใบที่
+ * รอมานานที่สุดขึ้นก่อน เพราะคนที่รอนานที่สุดคือคนที่ระบบทำให้เสียเวลามากที่สุด
+ *
+ * ประกาศไว้ก่อน '/:applicationId' โดยตั้งใจ — ไม่งั้น express จะอ่าน "pending"
+ * เป็นรหัสคำขอ แล้วตอบ 404 ให้กับหน้าจอของฝ่ายบัญชีเอง
+ */
+router.get('/pending', authenticateProvider, async (req, res) => {
+    try {
+        const waiting = await prisma.application.findMany({
+            where: { status: { in: [PHASES.PHASE_1.from, PHASES.PHASE_2.from] }, isDeleted: false },
+            select: {
+                id: true, applicationNumber: true, status: true, updatedAt: true,
+                phase1Amount: true, phase2Amount: true,
+                applicant: { select: { firstName: true, lastName: true } },
+            },
+            orderBy: { updatedAt: 'asc' },
+            take: 200,
+        });
+
+        const rows = waiting.map((a) => {
+            const [phase, spec] = a.status === PHASES.PHASE_1.from
+                ? ['PHASE_1', PHASES.PHASE_1]
+                : ['PHASE_2', PHASES.PHASE_2];
+            return {
+                applicationId: a.id,
+                applicationNumber: a.applicationNumber,
+                applicantName: [a.applicant?.firstName, a.applicant?.lastName].filter(Boolean).join(' ') || null,
+                phase,
+                label: spec.label,
+                amountThb: a[spec.amountField],
+                waitingSince: a.updatedAt,
+            };
+        });
+
+        return sendSuccessResponse(res, req, { data: { count: rows.length, rows } });
+    } catch (error) {
+        logger.error('[fees] pending queue failed', { error: error?.message });
+        return sendErrorResponse(res, req, {
+            status: 500,
+            code: 'FEE_QUEUE_FAILED',
+            message: 'อ่านคิวค่าธรรมเนียมไม่สำเร็จ',
+            messageTh: 'อ่านคิวค่าธรรมเนียมไม่สำเร็จ',
+        });
+    }
+});
+
+/**
  * GET /api/fees/:applicationId — ค่าธรรมเนียมสองงวดของคำขอนี้ ยืนยันแล้วหรือยัง
  *
  * เจ้าหน้าที่อ่านได้ทุกใบ · ผู้ยื่นอ่านได้เฉพาะใบของตัวเอง — เพราะเขาต้องรู้ว่าต้องจ่าย
