@@ -185,6 +185,17 @@ const applicationsAssign = [
                 reason: 'APPLICATION_ASSIGNED',
                 additionalData: {
                     updatedBy: req.user.id,
+                    // คอลัมน์ canonical — ประตูของคนจัดคิวเขียนไว้ที่
+                    // scheduler-assign-reviewer-handler.js:139 · ประตูนี้เคยเขียน
+                    // ผู้ตรวจลงใน formData อย่างเดียว แถวจึงเหลือ reviewerId = null
+                    // และด่านแยกหน้าที่ของ PATCH /api/applications/:id/reject
+                    // (application-workflow-handlers.js:99) ซึ่งอ่านคอลัมน์นี้
+                    // ตัวเดียว ก็อ่านว่า "ยังไม่มอบหมาย = ใครก็ได้"
+                    //
+                    // วัดจริง 2026-09-09: มอบหมายผ่านประตูนี้ให้ผู้ตรวจ A แล้วผู้ตรวจ B
+                    // ยิง reject ได้ HTTP 200 ดันใบไป REVISION_REQUESTED พร้อม
+                    // กำหนดส่งแก้ 5 วันทำการ บนคำขอที่เขาไม่ได้รับมอบหมาย
+                    reviewerId,
                     formData: {
                         ...formData,
                         // H1 fix: because additionalData carries a formData key, the

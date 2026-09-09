@@ -96,7 +96,14 @@ router.patch('/:id/reject', authenticateProvider, async (req, res) => {
         // assigned reviewer (DOC_REVISION) / auditor (FIELD_CAR) may drive their own
         // case; a null column means unassigned = allowed. Without this, any reviewer/
         // auditor in the org could request revision/CAR on a colleague's application.
-        const assignedOwnerId = decisionType === 'FIELD_CAR' ? application.auditorId : application.reviewerId;
+        // แถวที่มอบหมายผ่านประตูเดิม (provider/handlers/applications.js) เก็บผู้ตรวจ
+        // ไว้ใน formData เท่านั้น คอลัมน์เป็น null · ประตูนั้นเขียนคอลัมน์แล้วตั้งแต่
+        // วันนี้ แต่แถวเก่ายังอยู่ ด่านจึงต้องอ่านทั้งสองที่ — เหมือนที่
+        // shared/application-owner-gate.js:85-95 ทำอยู่แล้ว
+        const legacyReviewerId = asObject(asObject(application.formData).PROVIDERAssignment).reviewerId || null;
+        const assignedOwnerId = decisionType === 'FIELD_CAR'
+            ? application.auditorId
+            : (application.reviewerId || legacyReviewerId);
         if (assignedOwnerId && String(assignedOwnerId) !== String(req.user.id)) {
             return res.status(403).json({
                 success: false,
