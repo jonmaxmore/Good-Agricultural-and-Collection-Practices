@@ -10,6 +10,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { MarketingSection, MarketingCard } from '@/components/marketing/marketing-section';
 import { MINISTRY_CONTACT } from '@/lib/ministry-contact';
+import { ORGANIZATION } from '@/lib/organization-identity';
 
 export const metadata: Metadata = {
   title: 'เกี่ยวกับเรา',
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
 
 const PARTNERS = [
   {
-    title: 'กรมการแพทย์แผนไทยและการแพทย์ทางเลือก (DTAM)',
+    title: ORGANIZATION.name,
     description:
       'หน่วยงานราชการในสังกัดกระทรวงสาธารณสุข ผู้กำกับมาตรฐานสมุนไพรไทย ผู้ออกใบรับรอง GACP ตามอำนาจหน้าที่ของรัฐ',
     badge: 'ผู้ออกใบรับรอง',

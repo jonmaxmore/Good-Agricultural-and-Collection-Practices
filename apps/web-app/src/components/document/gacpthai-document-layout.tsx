@@ -4,6 +4,7 @@ import React from 'react';
 import './gacpthai-document-styles.css';
 import { QrImage } from '@/components/ui/qr-image';
 import { DEFAULT_PUBLIC_HOST } from '@/lib/verify/public-verify-url';
+import { ORGANIZATION } from '@/lib/organization-identity';
 
 /**
  * Fix-round 1 (review 6712f985): the reviewer found
@@ -96,7 +97,7 @@ const DEFAULT_PARENT = 'ระบบรับรองมาตรฐาน GACP
 const DEFAULT_ADDR = '88/23 หมู่ 4 ถนนติวานนท์ ต.ตลาดขวัญ อ.เมือง จ.นนทบุรี 11000';
 // Ministry contact verified 2026-04-28 from dtam.moph.go.th (shipped v3.4.1).
 // Source of truth: apps/web-app/src/lib/ministry-contact.ts.
-const DEFAULT_CONTACT = 'โทร: 0-2591-7007 | อีเมล: contact@gacpth.com';
+const DEFAULT_CONTACT = `โทร: ${ORGANIZATION.phone} | อีเมล: ${ORGANIZATION.email}`;
 
 export function DtamDocumentLayout({
     badgeTitle,

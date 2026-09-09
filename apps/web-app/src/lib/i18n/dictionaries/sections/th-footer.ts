@@ -1,3 +1,5 @@
+import { ORGANIZATION } from '@/lib/organization-identity';
+
 export const thFooter = {
 footer: {
         landmarkLabel: "ข้อมูลกระทรวงและลิงก์ส่วนล่าง",
@@ -22,7 +24,7 @@ footer: {
         buildDateFallback: "ไม่ทราบรุ่นบิลด์",
         version: "เวอร์ชัน",
         ministrySite: "เว็บไซต์กรม",
-        ministrySiteAria: "เว็บไซต์กรมการแพทย์แผนไทยและการแพทย์ทางเลือก dtam.moph.go.th (เปิดในแท็บใหม่)",
+        ministrySiteAria: `เว็บไซต์${ORGANIZATION.name} ${ORGANIZATION.website.replace(/^https?:\/\//, '')} (เปิดในแท็บใหม่)`,
 
         endorsedBy: "ระบบนี้รับรองโดย{ministry}",
         freeToUse: "เป็นเว็บไซต์ของรัฐบาลไทย ใช้งานฟรี ไม่มีค่าใช้จ่ายแอบแฝง",

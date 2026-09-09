@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { FAQ_TOPICS, FAQ_COUNT } from '@/components/help/faq-data';
 import { th } from '@/lib/i18n/dictionaries/th';
 import { HelpBackHomeCrumb } from './help-back-home-crumb';
+import { ORGANIZATION } from '@/lib/organization-identity';
 
 /**
  * Copy comes from the dictionary, not from literals in this file.
@@ -139,7 +140,7 @@ export default function HelpHome() {
                     </p>
                     <div className="mt-4 flex flex-wrap gap-3">
                         <a
-                            href="mailto:support@gacpth.com"
+                            href={`mailto:${ORGANIZATION.email}`}
                             className="inline-flex h-10 items-center justify-center rounded-lg bg-leaf-700 px-4 text-sm font-semibold text-white shadow-sm hover:bg-leaf-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf-600 focus-visible:ring-offset-2"
                         >
                             ส่งอีเมลถึงเรา

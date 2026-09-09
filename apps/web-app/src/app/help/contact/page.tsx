@@ -1,18 +1,19 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import ContactClient from './contact-client';
+import { ORGANIZATION } from '@/lib/organization-identity';
 
 export const metadata: Metadata = {
     title: 'ติดต่อเจ้าหน้าที่ | ศูนย์ช่วยเหลือ GACP',
     description:
-        'ส่งคำถามถึงทีมช่วยเหลือ อีเมล support@gacpth.com พร้อมแบบฟอร์มเตรียมร่างก่อนส่ง',
+        `ส่งคำถามถึงทีมช่วยเหลือ อีเมล ${ORGANIZATION.email} พร้อมแบบฟอร์มเตรียมร่างก่อนส่ง`,
 };
 
 const CONTACT_CARDS = [
     {
         label: 'อีเมลทั่วไป',
-        href: 'mailto:support@gacpth.com',
-        value: 'support@gacpth.com',
+        href: `mailto:${ORGANIZATION.email}`,
+        value: ORGANIZATION.email,
         description: 'คำถามทั่วไป ขอความช่วยเหลือ',
     },
     {
@@ -78,7 +79,7 @@ export default function ContactPage() {
                     <h2 id="address-heading" className="text-sm font-bold text-slate-700">
                         ที่อยู่
                     </h2>
-                    <p className="mt-2 text-sm text-slate-700">กรมการแพทย์แผนไทยและการแพทย์ทางเลือก</p>
+                    <p className="mt-2 text-sm text-slate-700">{ORGANIZATION.name}</p>
                     <p className="text-sm text-slate-600">
                         88/23 หมู่ 4 ถ. ติวานนท์ ต. ตลาดขวัญ อ. เมือง จ. นนทบุรี 11000
                     </p>

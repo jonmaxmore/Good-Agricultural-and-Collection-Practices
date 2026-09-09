@@ -1,3 +1,5 @@
+import { ORGANIZATION } from '@/lib/organization-identity';
+
 export const enCore = {
 common: {
         ministryName: "Department of Thai Traditional and Alternative Medicine",
@@ -59,6 +61,7 @@ common: {
            reaches Thai glyphs it has no voice for and reads noise. The
            announcement now stays in the language the page is actually in;
            the destination is named, not transliterated. */
+
         languageToggle: "TH",
         languageToggleAria: "Switch language to Thai",
         /* Y1-FIX-A — cross-cutting action panel labels.
@@ -419,9 +422,9 @@ applicationsList: {
     },
 renewalAdvisory: {
         title: "Renewal payment is temporarily unavailable in the platform",
-        body: "The renewal-payment feature is still being wired up. Please contact the Department of Thai Traditional and Alternative Medicine (DTAM) directly to settle the renewal fee and have the new certificate issued. Email support@gacpth.com or use the contact page below.",
+        body: `The renewal-payment feature is still being wired up. Please contact ${ORGANIZATION.nameEn} directly to settle the renewal fee and have the new certificate issued. Email ${ORGANIZATION.email} or use the contact page below.`,
         contactCta: "Contact DTAM staff",
-        contactEmail: "support@gacpth.com",
+        contactEmail: ORGANIZATION.email,
         contactFormCta: "Open contact form"
     }
 };

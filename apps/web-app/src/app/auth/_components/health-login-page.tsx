@@ -21,6 +21,7 @@ import { AuthService } from '@/lib/services/auth-service';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { HEALTH_DASHBOARD_ROUTE, PROVIDER_LOGIN_ROUTE } from '@/lib/constants/auth-routes';
 import MfaChallengeForm from './mfa-challenge-form';
+import { ORGANIZATION } from '@/lib/organization-identity';
 
 // Open-redirect guard: only honour a `?redirect=` value that is a same-origin
 // absolute path ("/dashboard"). A protocol-relative ("//evil.com") or absolute
@@ -219,7 +220,7 @@ export default function CitizenLoginPage() {
         </div>
 
         <div className="text-xs font-medium text-white/80">
-          {language === 'en' ? 'Department of Thai Traditional and Alternative Medicine' : 'กรมการแพทย์แผนไทยและการแพทย์ทางเลือก'}
+          {language === 'en' ? ORGANIZATION.nameEn : ORGANIZATION.name}
         </div>
       </section>
 

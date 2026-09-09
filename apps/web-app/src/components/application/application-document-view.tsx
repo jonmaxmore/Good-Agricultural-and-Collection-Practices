@@ -57,6 +57,7 @@ import {
   type EditableSection,
 } from '@/components/application/application-document-edit-config';
 import { safeSrc } from '@/lib/safe-url';
+import { ORGANIZATION } from '@/lib/organization-identity';
 
 type InfoItemProps = {
   label: string;
@@ -371,7 +372,7 @@ export function ApplicationDocumentView({
         />
         <div className="flex-1">
           <p className="text-base font-bold leading-tight text-gov-green">กองกัญชาทางการแพทย์</p>
-          <p className="text-sm font-bold leading-tight text-gov-green">กรมการแพทย์แผนไทยและการแพทย์ทางเลือก</p>
+          <p className="text-sm font-bold leading-tight text-gov-green">{ORGANIZATION.name}</p>
           <p className="mt-1 text-xs leading-snug text-slate-600">
             88/23 หมู่ 4 ถนนติวานนท์ ตำบลตลาดขวัญ อำเภอเมือง จังหวัดนนทบุรี 11000
           </p>

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { ORGANIZATION } from '@/lib/organization-identity';
 
 /**
  * ContactClient — pre-fill helper for contacting support.
@@ -26,7 +27,7 @@ const TOPIC_TO_EMAIL: Record<string, string> = {
     refund: 'finance@gacpth.com',
     pdpa: 'privacy@gacpth.com',
 };
-const DEFAULT_EMAIL = 'support@gacpth.com';
+const DEFAULT_EMAIL = ORGANIZATION.email;
 
 export default function ContactClient() {
     const [topic, setTopic] = React.useState<string>('application');

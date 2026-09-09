@@ -1,3 +1,5 @@
+import { ORGANIZATION } from '@/lib/organization-identity';
+
 export const thWizard = {
 wizard: {
         steps: {
@@ -384,7 +386,7 @@ wizard: {
                 title: "ติดต่อสอบถาม:",
                 project: "โครงการ: พัฒนาและส่งเสริมมาตรฐาน GACP",
                 researcher: "หน่วยงาน: ระบบรับรองมาตรฐาน GACP สมุนไพร (DTAM)",
-                contact: "โทร: 02-591-7007 | อีเมล: support@gacpth.com"
+                contact: `โทร: ${ORGANIZATION.phone} | อีเมล: ${ORGANIZATION.email}`
             },
             buttons: {
                 home: "กลับสู่หน้าหลัก",
@@ -656,6 +658,7 @@ wizard: {
             }
         },
         /* Y1-FIX-A — wizard chrome (TH). */
+
         chrome: {
             stepCounter: "ขั้นตอนที่ {n} จาก {total}",
             tipShow: "แสดงคำแนะนำ",

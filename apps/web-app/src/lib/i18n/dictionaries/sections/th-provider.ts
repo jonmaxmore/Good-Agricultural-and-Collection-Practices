@@ -1,3 +1,5 @@
+import { ORGANIZATION } from '@/lib/organization-identity';
+
 export const thPROVIDER = {
 provider: {
         nav: {
@@ -745,7 +747,7 @@ provider: {
                 email: "อีเมล",
                 phone: "โทรศัพท์",
                 organization: "หน่วยงาน",
-                orgName: "กรมการแพทย์แผนไทยและการแพทย์ทางเลือก"
+                orgName: ORGANIZATION.name
             },
             quickActions: {
                 securityMfa: "ความปลอดภัยและ MFA",

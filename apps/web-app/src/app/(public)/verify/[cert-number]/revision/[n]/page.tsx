@@ -10,6 +10,7 @@ import { headers } from 'next/headers';
 import { buildPublicVerifyUrl } from '@/lib/verify/public-verify-url';
 import { mapIntegrity } from '@/lib/verify/integrity-presentation';
 import { formatRevisionDate } from '../../verify-view';
+import { ORGANIZATION } from '@/lib/organization-identity';
 
 export const metadata: Metadata = {
   title: 'ฉบับก่อนหน้าของใบรับรอง GACP | Certificate Revision',
@@ -103,7 +104,7 @@ export default async function PublicCertRevisionPage({
           </span>
           <span className="leading-tight">
             <span className="block text-sm font-bold text-primary">ระบบรับรอง GACP</span>
-            <span className="block text-[10px] text-muted-foreground">กรมการแพทย์แผนไทยและการแพทย์ทางเลือก</span>
+            <span className="block text-[10px] text-muted-foreground">{ORGANIZATION.name}</span>
           </span>
         </Link>
         <span className="hidden items-center gap-1.5 rounded-full bg-leaf-soft px-3 py-1 text-xs font-semibold text-leaf-onSoft sm:inline-flex">
@@ -246,7 +247,7 @@ export default async function PublicCertRevisionPage({
           </Card>
 
           <p className="mt-4 text-center text-[11px] leading-relaxed text-muted-foreground">
-            ออกโดยกรมการแพทย์แผนไทยและการแพทย์ทางเลือก (DTAM) ภายใต้มาตรฐาน ISO/IEC 17065
+            ออกโดย{ORGANIZATION.name} ภายใต้มาตรฐาน ISO/IEC 17065
           </p>
 
           <div className="mt-3 text-center">

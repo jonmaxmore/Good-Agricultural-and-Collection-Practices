@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Footer } from '@/components/layout/Footer';
+import { ORGANIZATION } from '@/lib/organization-identity';
 
 const PRIVACY_UPDATED_AT = '26 กุมภาพันธ์ 2026';
 
@@ -59,7 +60,7 @@ export default function PrivacyPage() {
             </div>
             <div>
               <p className="gov-auth-brand-title">GACP Registration Portal</p>
-              <p className="gov-auth-brand-subtitle">กรมการแพทย์แผนไทยและการแพทย์ทางเลือก, กระทรวงสาธารณสุข</p>
+              <p className="gov-auth-brand-subtitle">{ORGANIZATION.name}</p>
             </div>
           </div>
           <Link href="/register" className="gov-auth-link text-sm">

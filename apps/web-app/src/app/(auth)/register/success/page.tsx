@@ -8,12 +8,13 @@ import { useSearchParams } from 'next/navigation';
 import { IconCheck, IconChevronRight, IconShieldCheck } from '@tabler/icons-react';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Footer } from '@/components/layout/Footer';
+import { ORGANIZATION } from '@/lib/organization-identity';
 
 const COPY = {
   th: {
     brandTitle: 'GACP Registration',
     brandSubtitle:
-      'กรมการแพทย์แผนไทยและการแพทย์ทางเลือก, กระทรวงสาธารณสุข',
+      ORGANIZATION.name,
     switchLang: 'EN',
     heroTitle: 'ยินดีต้อนรับสู่ระบบ GACP',
     heroSubtitle: 'การลงทะเบียนของท่านเสร็จสมบูรณ์แล้ว สามารถเริ่มใช้งานได้ทันที',
@@ -36,7 +37,7 @@ const COPY = {
   en: {
     brandTitle: 'GACP Registration',
     brandSubtitle:
-      'กรมการแพทย์แผนไทยและการแพทย์ทางเลือก, กระทรวงสาธารณสุข',
+      ORGANIZATION.name,
     switchLang: 'TH',
     heroTitle: 'Welcome to GACP',
     heroSubtitle: 'Your registration is complete. You can start using the system right away.',

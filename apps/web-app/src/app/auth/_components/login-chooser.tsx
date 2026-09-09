@@ -25,6 +25,7 @@ import { Button, type ButtonProps } from '@/components/ui/primitives/button';
 import { useAppTheme } from '@/components/theme';
 import { HEALTH_LOGIN_ROUTE, PROVIDER_LOGIN_ROUTE } from '@/lib/constants/auth-routes';
 import { cn } from '@/lib/utils';
+import { ORGANIZATION } from '@/lib/organization-identity';
 
 type DoorAccent = 'leaf' | 'officer';
 
@@ -126,7 +127,7 @@ export default function LoginChooser() {
           >
             <Image
               src="/images/dtam-seal.png"
-              alt="ตรากรมการแพทย์แผนไทยและการแพทย์ทางเลือก"
+              alt={`ตรา${ORGANIZATION.name}`}
               width={44}
               height={44}
               priority

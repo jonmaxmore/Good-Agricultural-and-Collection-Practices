@@ -19,6 +19,7 @@ import {
 } from '@/lib/services/audit-service';
 import { notifications } from '@/lib/notifications';
 import { csvRow } from '@/lib/csv';
+import { ORGANIZATION } from '@/lib/organization-identity';
 
 /**
  * SchedulerQueueClient — Iter 25 step 2 client island.
@@ -267,7 +268,7 @@ export default function SchedulerQueueClient() {
             />
 
             <SummaryCard
-                org="กรมการแพทย์แผนไทยและการแพทย์ทางเลือก (DTAM)"
+                org={ORGANIZATION.name}
                 {...(summary?.oldestPendingDays
                     ? { contextPill: `รอเก่าสุด ${summary.oldestPendingDays} วัน` }
                     : {})}

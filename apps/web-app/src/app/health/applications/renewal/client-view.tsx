@@ -12,6 +12,7 @@ import { HEALTH_LOGIN_ROUTE } from '@/lib/constants/auth-routes';
 import { getStoredUser } from '@/lib/services/auth-service-session';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Certificate, RenewalStep } from './types';
+import { ORGANIZATION } from '@/lib/organization-identity';
 // V1 review M-3: SuccessStep removed — D3 disabled the success-step jump
 // since the backend renewal-payment endpoint doesn't exist. Re-enable this
 // import + the `case 'success'` branch only when RENEWAL_PAYMENT_WIRED flips
@@ -130,7 +131,7 @@ function RenewalContent() {
         title: 'การชำระเงินสำหรับการต่ออายุไม่สามารถดำเนินการในระบบได้ในขณะนี้',
         body: 'ฟีเจอร์ชำระเงินค่าต่ออายุยังอยู่ระหว่างพัฒนา กรุณาติดต่อ DTAM',
         contactCta: 'ติดต่อเจ้าหน้าที่',
-        contactEmail: 'support@gacpth.com',
+        contactEmail: ORGANIZATION.email,
         contactFormCta: 'เปิดฟอร์มติดต่อ',
     };
     // Y1-FIX-B — pull renewal flow copy from dict.health.renewal

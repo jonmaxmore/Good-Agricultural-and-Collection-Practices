@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { GACP_PHASE1_TOTAL, GACP_PHASE2_TOTAL } from '@/constants/fees';
+import { ORGANIZATION } from '@/lib/organization-identity';
 
 /**
  * OnboardingModal — Iter 28 customer success first-run walkthrough.
@@ -85,7 +86,7 @@ export const DEFAULT_ONBOARDING_STEPS: ReadonlyArray<OnboardingStep> = [
             'หากต้องการความช่วยเหลือ ทีมงานพร้อมตอบทุกคำถามผ่านศูนย์ช่วยเหลือ',
         bullets: [
             'ค้นหาคำตอบในหน้า FAQ',
-            'อีเมล: support@gacpth.com',
+            `อีเมล: ${ORGANIZATION.email}`,
             'เปิดให้บริการในเวลาราชการ',
             'พบที่เมนู "ศูนย์ช่วยเหลือ" ในแถบนำทาง',
         ],
