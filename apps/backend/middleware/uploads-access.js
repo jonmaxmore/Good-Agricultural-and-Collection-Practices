@@ -191,16 +191,28 @@ async function gateSlipObjectAccess(req, res, next) {
         return next();
     }
 
-    // C2: applicant draft documents get their own owner/tenant object-ACL.
-    if (rel.startsWith('application-drafts/') || rel.startsWith('wizard-drafts/')) {
+    // ทุกไฟล์ที่ classifyUploadsPath ตัดสินว่า "sensitive" ต้องผ่าน ACL ระดับวัตถุ
+    // ไม่ใช่แค่ draft กับ slip
+    //
+    // เดิมมีเพียงสองชนิดที่ถูกส่งเข้า authorizeUploadsObject ส่วน car/ audits/ และ
+    // ไฟล์ที่ราก ถูกจัดว่า sensitive (จึงบังคับให้มีเซสชัน) แต่ไม่เคยถูกตรวจว่า
+    // "เซสชันของใคร" · วัดจริง 2026-09-09:
+    //
+    //   GET /uploads/car/<ไฟล์>   ไม่มีโทเคน -> 401 · ผู้ยื่นคนอื่น -> 200
+    //   GET /uploads/<ไฟล์ที่ราก> ไม่มีโทเคน -> 401 · ผู้ยื่นคนอื่น -> 200
+    //
+    // car/ คือเอกสารตอบข้อบกพร่องที่เกษตรกรยื่นหลังถูกตรวจพบข้อผิดพลาด และ audits/
+    // คือภาพถ่ายหลักฐานการตรวจแปลง — ทั้งสองเป็นข้อมูลส่วนบุคคลที่ไม่มีผู้บริโภคสาธารณะ
+    //
+    // authorizeUploadsObject รองรับทุกชนิดอยู่แล้ว (slip / root / draft / audit / car)
+    // และ fail closed ด้วย OWNER_UNRESOLVED เมื่อหาเจ้าของไม่ได้ · ช่องว่างอยู่ที่
+    // ตรงนี้จุดเดียว: ไม่มีใครส่งชนิดที่เหลือเข้าไปให้มันตัดสิน
+    const { sensitive } = classifyUploadsPath(rel);
+    if (sensitive) {
         return gateDraftObjectAccess(req, res, next, rel);
     }
 
-    // Only slip files are subject to the slip object-level ACL. Everything else
-    // (root files, public lab reports) passes through unchanged.
-    if (!rel.startsWith('slips/')) {
-        return next();
-    }
+    return next();
 
     // gateSensitiveUploads already required authenticateAny for slip paths, so
     // req.user should be present. Defend anyway — fail closed, do not serve.

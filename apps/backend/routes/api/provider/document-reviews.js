@@ -30,6 +30,7 @@
 
 const express = require('express');
 
+const { normalizeRole } = require('../../../shared/canonical-rbac');
 const { prisma } = require('../../../services/prisma-database');
 const logger = require('../../../shared/logger');
 const { lookup, getMessage } = require('../../../shared/error-codes');
@@ -114,6 +115,40 @@ function answer(res, err, where) {
     });
 }
 
+/**
+ * ผู้ตรวจที่ได้รับมอบหมายเท่านั้นที่แตะใบที่มอบหมายแล้วได้
+ *
+ * ความหมายเดียวกับที่ประตูอื่นใช้อยู่ (handlers/reviewer.js:244,
+ * handlers/workflow-transitions-handler.js:151): ใบที่ยังไม่มอบหมาย (reviewerId = null)
+ * เปิดให้ผู้ตรวจคนไหนก็หยิบได้ — เป็นกองงานร่วม · แต่เมื่อคนจัดคิวมอบหมายแล้ว
+ * มีเจ้าของคนเดียว
+ *
+ * ไฟล์นี้เป็นไฟล์เดียวในสามที่เดิน edge ASSIGNED_FOR_REVIEW -> DOC_APPROVED /
+ * REVISION_REQUESTED ที่ข้ามการตรวจนี้ · วัดจริง 2026-09-09: ผู้ตรวจเอกสารที่ไม่ได้
+ * รับมอบหมาย เรียก GET /document-check ได้ 200 พร้อมรายการเอกสารทั้งใบ และ POST
+ * /document-decision ผ่านด่านสิทธิ์เข้าไปถึงกฎธุรกิจ
+ *
+ * ผลที่ตามมาไม่ใช่แค่การอ่านข้อมูลคนอื่น — มันทำให้การมอบหมายของคนจัดคิวไม่มีความหมาย
+ * และไม่มีใครตอบได้ว่าใครควรเป็นคนตัดสินใบนั้น
+ *
+ * ผู้ดูแลระบบข้ามได้ เพราะต้องมีคนแก้ไขสถานการณ์เมื่อผู้ตรวจที่รับมอบหมายลาออกหรือลาป่วย
+ */
+function refuseIfNotTheAssignedReviewer(req, res, application) {
+    const actorRole = normalizeRole(req.user?.role);
+    if (actorRole === 'admin' || actorRole === 'platform_admin') { return false; }
+    if (!application?.reviewerId) { return false; }
+    if (application.reviewerId === req.user?.id) { return false; }
+
+    res.status(403).json({
+        success: false,
+        code: 'NOT_THE_ASSIGNED_REVIEWER',
+        error: 'ไม่มีสิทธิ์ดำเนินการ คุณไม่ใช่ผู้ตรวจที่ได้รับมอบหมายสำหรับคำขอนี้',
+        message: 'You are not the reviewer assigned to this application',
+        messageTh: 'ไม่มีสิทธิ์ดำเนินการ คุณไม่ใช่ผู้ตรวจที่ได้รับมอบหมายสำหรับคำขอนี้',
+    });
+    return true;
+}
+
 /** The filing, its requirement answer, and this round's verdicts. */
 async function loadCheck(applicationId) {
     const application = await prisma.application.findFirst({
@@ -191,6 +226,7 @@ router.get(
         try {
             const loaded = await loadCheck(req.params.id);
             if (!loaded) { return res.status(404).json({ success: false, error: 'Application not found' }); }
+            if (refuseIfNotTheAssignedReviewer(req, res, loaded.application)) { return undefined; }
 
             const slots = joinSlots(loaded.requirements, loaded.currentReviews);
             return res.json({
@@ -225,6 +261,7 @@ router.post(
 
             const loaded = await loadCheck(req.params.id);
             if (!loaded) { return res.status(404).json({ success: false, error: 'Application not found' }); }
+            if (refuseIfNotTheAssignedReviewer(req, res, loaded.application)) { return undefined; }
 
             const slot = ((loaded.requirements && loaded.requirements.slots) || [])
                 .find((s) => s.slotId === slotId);
@@ -282,6 +319,7 @@ router.post(
             const action = (req.body || {}).action;
             const loaded = await loadCheck(req.params.id);
             if (!loaded) { return res.status(404).json({ success: false, error: 'Application not found' }); }
+            if (refuseIfNotTheAssignedReviewer(req, res, loaded.application)) { return undefined; }
 
             const slots = joinSlots(loaded.requirements, loaded.currentReviews);
             // Refuses here if the officer may not take this decision. Before any

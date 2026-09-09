@@ -39,6 +39,33 @@ const bindTenant = tenantContextMiddleware();
 // INDIVIDUAL Entity). Powers the read-side Prisma extension that
 // auto-filters Application/Farm queries by entityId.
 const bindActiveEntity = activeEntityMiddleware();
+
+/**
+ * ตอบคำปฏิเสธด้านสิทธิ์ พร้อมประโยคไทยจากแคตตาล็อก
+ *
+ * ทำไมต้องมี: ไฟล์นี้ตอบด้วย res.status(n).json({...}) โดยตรง 29 จุด ซึ่งข้าม
+ * shared/api-response.js ไป · วัดจริง 2026-09-09: ไม่มีสักจุดที่ส่ง messageTh
+ * ทั้งที่ทั้ง 11 รหัสที่ไฟล์นี้ใช้มีประโยคไทยเขียนไว้ในแคตตาล็อกครบแล้ว
+ *
+ * ผลคือความล้มเหลวที่เกษตรกรเจอบ่อยที่สุด — เซสชันหมดอายุ ไม่มีสิทธิ์ โทเคนถูกเพิกถอน —
+ * พูดอังกฤษล้วนกับผู้ใช้ที่อ่านไทย
+ *
+ * ไม่เปลี่ยนรูปคำตอบเดิม เพิ่มเฉพาะ messageTh เมื่อยังไม่มี · ผู้เรียกที่ส่ง messageTh
+ * มาเองยังชนะ
+ */
+function authError(res, status, body) {
+  const payload = { ...body };
+  if (!payload.messageTh && payload.code) {
+    try {
+      const mod = require('../shared/error-codes');
+      const table = mod.ERROR_CODES || mod;
+      const entry = table[payload.code];
+      if (entry && entry.messageTh) { payload.messageTh = entry.messageTh; }
+    } catch { /* แคตตาล็อกอ่านไม่ได้ = ตอบแบบเดิม ดีกว่าโยน error ซ้อน error */ }
+  }
+  return res.status(status).json(payload);
+}
+
 function bindScopes(req, res, next) {
   return bindTenant(req, res, () => bindActiveEntity(req, res, next));
 }
@@ -274,7 +301,7 @@ function isPrivilegedProviderRole(role) {
  * than TOKEN_REVOKED (which would prompt a re-login).
  */
 function rejectIdentityUnverified(res) {
-  return res.status(401).json({
+  return authError(res, 401, {
     success: false,
     error: 'Unauthorized',
     message: 'ไม่สามารถยืนยันเซสชันได้ชั่วคราว กรุณาลองใหม่ / Session could not be verified right now. Please retry.',
@@ -325,7 +352,7 @@ function rejectPurposeScopedToken(decoded, res, authType = 'access') {
       `(authType=${authType}, tokenType=${decoded && decoded.tokenType}).`,
     );
   }
-  res.status(401).json({
+  authError(res, 401, {
     success: false,
     error: 'Unauthorized',
     message: 'This token cannot be used to authenticate a session',
@@ -399,7 +426,7 @@ function rejectIfNoJti(decoded, res, authType) {
     return false;
   }
 
-  res.status(401).json({
+  authError(res, 401, {
     success: false,
     code: 'TOKEN_NO_JTI',
     error: 'Token missing JTI claim',
@@ -443,7 +470,7 @@ async function authenticateHealth(req, res, next) {
       if (req.path.includes('/applications/draft')) {
         logger.warn(`[Auth] No token found for request to ${req.originalUrl}`);
       }
-      return res.status(401).json({
+      return authError(res, 401, {
         success: false,
         error: 'Unauthorized',
         message: 'No token provided',
@@ -472,7 +499,7 @@ async function authenticateHealth(req, res, next) {
     try {
       const revoked = await isAccessTokenBlocklisted(decoded.jti);
       if (revoked) {
-        return res.status(401).json({
+        return authError(res, 401, {
           success: false,
           error: 'Unauthorized',
           message: 'Token has been revoked',
@@ -488,7 +515,7 @@ async function authenticateHealth(req, res, next) {
 
     const resolvedUserId = resolveTokenUserId(decoded);
     if (!resolvedUserId) {
-      return res.status(401).json({
+      return authError(res, 401, {
         success: false,
         error: 'Unauthorized',
         message: 'Invalid token payload',
@@ -505,7 +532,7 @@ async function authenticateHealth(req, res, next) {
     // deliberate keep-alive, and the AUTHORITATIVE eviction happens at /refresh
     // (a stale AT lives ≤ its natural exp; the RT can no longer renew it).
     if (identity.dbHealthy && isTokenBeforeSessionEpoch(decoded, identity.sessionsRevokedAt)) {
-      return res.status(401).json({
+      return authError(res, 401, {
         success: false,
         error: 'Unauthorized',
         message: 'Session was revoked (password changed). Please log in again.',
@@ -537,7 +564,7 @@ async function authenticateHealth(req, res, next) {
 
     // Enhanced error response
     if (error.code === 'TOKEN_EXPIRED') {
-      return res.status(401).json({
+      return authError(res, 401, {
         success: false,
         error: 'Unauthorized',
         message: 'Token has expired',
@@ -547,7 +574,7 @@ async function authenticateHealth(req, res, next) {
     }
 
     if (error.code === 'INVALID_TOKEN') {
-      return res.status(401).json({
+      return authError(res, 401, {
         success: false,
         error: 'Unauthorized',
         message: 'Invalid token',
@@ -555,7 +582,7 @@ async function authenticateHealth(req, res, next) {
       });
     }
 
-    return res.status(403).json({
+    return authError(res, 403, {
       success: false,
       error: 'Forbidden',
       message: 'Authentication failed',
@@ -588,7 +615,7 @@ async function authenticateProvider(req, res, next) {
     const token = cookieToken || headerToken;
 
     if (!token) {
-      return res.status(401).json({
+      return authError(res, 401, {
         success: false,
         error: 'Unauthorized',
         message: 'Access token required',
@@ -614,7 +641,7 @@ async function authenticateProvider(req, res, next) {
     try {
       const revoked = await isAccessTokenBlocklisted(decoded.jti);
       if (revoked) {
-        return res.status(401).json({
+        return authError(res, 401, {
           success: false,
           error: 'Unauthorized',
           message: 'Token has been revoked',
@@ -627,7 +654,7 @@ async function authenticateProvider(req, res, next) {
 
     const resolvedUserId = resolveTokenUserId(decoded);
     if (!resolvedUserId) {
-      return res.status(401).json({
+      return authError(res, 401, {
         success: false,
         error: 'Unauthorized',
         message: 'Invalid token payload',
@@ -639,7 +666,7 @@ async function authenticateProvider(req, res, next) {
     const canonicalRole = normalizeRole(decoded.role);
     if (!decoded.role || !isProviderRole(decoded.role)) {
       logger.warn(`[AUTH] Non-provider role attempted provider access: ${canonicalRole || 'UNMAPPED'}`);
-      return res.status(403).json({
+      return authError(res, 403, {
         success: false,
         error: 'Forbidden',
         message: 'Provider access only',
@@ -653,7 +680,7 @@ async function authenticateProvider(req, res, next) {
     // BE-AUTH-03-03 (session epoch): mirror of the health path — reject an
     // access token issued before the owner's last password change/reset.
     if (identity.dbHealthy && isTokenBeforeSessionEpoch(decoded, identity.sessionsRevokedAt)) {
-      return res.status(401).json({
+      return authError(res, 401, {
         success: false,
         error: 'Unauthorized',
         message: 'Session was revoked (password changed). Please log in again.',
@@ -689,7 +716,7 @@ async function authenticateProvider(req, res, next) {
 
     // Enhanced error response
     if (error.code === 'TOKEN_EXPIRED') {
-      return res.status(401).json({
+      return authError(res, 401, {
         success: false,
         error: 'Unauthorized',
         message: 'Token has expired - please login again',
@@ -699,7 +726,7 @@ async function authenticateProvider(req, res, next) {
     }
 
     if (error.code === 'INVALID_TOKEN') {
-      return res.status(401).json({
+      return authError(res, 401, {
         success: false,
         error: 'Unauthorized',
         message: 'Invalid token',
@@ -707,7 +734,7 @@ async function authenticateProvider(req, res, next) {
       });
     }
 
-    return res.status(403).json({
+    return authError(res, 403, {
       success: false,
       error: 'Forbidden',
       message: 'Authentication failed',
@@ -782,7 +809,7 @@ async function authenticateAny(req, res, next) {
   const token = cookieToken || headerToken;
 
   if (!token) {
-    return res.status(401).json({
+    return authError(res, 401, {
       success: false,
       error: 'Unauthorized',
       message: 'No token provided',
@@ -812,7 +839,7 @@ async function authenticateAny(req, res, next) {
       // transitions, certificates, entities, dashboard) until natural exp.
       try {
         if (await isAccessTokenBlocklisted(decoded.jti)) {
-          return res.status(401).json({
+          return authError(res, 401, {
             success: false,
             error: 'Unauthorized',
             message: 'Token has been revoked',
@@ -832,7 +859,7 @@ async function authenticateAny(req, res, next) {
       // BE-AUTH-03-03 (session epoch): reject a pre-password-change access token
       // on the dual-auth path too (certificates/payments/entities mount here).
       if (identity.dbHealthy && isTokenBeforeSessionEpoch(decoded, identity.sessionsRevokedAt)) {
-        return res.status(401).json({
+        return authError(res, 401, {
           success: false,
           error: 'Unauthorized',
           message: 'Session was revoked (password changed). Please log in again.',
@@ -884,7 +911,7 @@ async function authenticateAny(req, res, next) {
       // (see provider branch above for the rationale — same logout-bypass).
       try {
         if (await isAccessTokenBlocklisted(decoded.jti)) {
-          return res.status(401).json({
+          return authError(res, 401, {
             success: false,
             error: 'Unauthorized',
             message: 'Token has been revoked',
@@ -899,7 +926,7 @@ async function authenticateAny(req, res, next) {
       // BE-AUTH-03-03 (session epoch): reject a pre-password-change access token
       // on the health branch of the dual-auth path (parity with provider branch).
       if (identity.dbHealthy && isTokenBeforeSessionEpoch(decoded, identity.sessionsRevokedAt)) {
-        return res.status(401).json({
+        return authError(res, 401, {
           success: false,
           error: 'Unauthorized',
           message: 'Session was revoked (password changed). Please log in again.',
@@ -926,7 +953,7 @@ async function authenticateAny(req, res, next) {
     // Both failed
   }
 
-  return res.status(401).json({
+  return authError(res, 401, {
     success: false,
     error: 'Unauthorized',
     message: 'Invalid or expired token',
@@ -960,7 +987,7 @@ async function requireVerification(req, res, next) {
       return next();
     }
 
-    return res.status(403).json({
+    return authError(res, 403, {
       success: false,
       error: 'Identity verification required',
       code: 'VERIFICATION_REQUIRED',

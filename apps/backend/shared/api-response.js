@@ -117,9 +117,24 @@ function sendErrorResponse(
     extra = {},
   } = {},
 ) {
-  const fallbackMessages = DEFAULT_ERROR_MESSAGES[code] || DEFAULT_ERROR_MESSAGES.INTERNAL_SERVER_ERROR;
-  const resolvedMessage = message || fallbackMessages.en;
-  const resolvedMessageTh = messageTh || fallbackMessages.th;
+  // ลำดับการหาข้อความ: สิ่งที่ผู้เรียกส่งมา -> แคตตาล็อก 204 รหัส -> แคตตาล็อกเล็ก
+  // -> ข้อความกลาง
+  //
+  // เดิมบรรทัดนี้เป็น `DEFAULT_ERROR_MESSAGES[code] || DEFAULT_ERROR_MESSAGES
+  // .INTERNAL_SERVER_ERROR` ซึ่งรู้จักแค่ 13 รหัส · อีก 191 รหัสที่มีประโยคไทยเขียนไว้
+  // แล้วใน shared/error-codes.js ตกลงมาที่ "เกิดข้อผิดพลาดภายในระบบ" ทั้งหมด
+  //
+  // วัดจริง 2026-09-09: ล็อกอินผิด 5 ครั้ง ระบบล็อกบัญชีถูกต้องและตอบ 423
+  // ACCOUNT_LOCKED แต่ messageTh = "เกิดข้อผิดพลาดภายในระบบ" ทั้งที่แคตตาล็อกมี
+  // "บัญชีถูกล็อกชั่วคราวเนื่องจากเข้าสู่ระบบผิดหลายครั้ง" เขียนไว้แล้ว
+  //
+  // ผลของบั๊กนี้ไม่ใช่แค่ข้อความไม่สวย — มันบอกผู้ใช้ว่าระบบพัง ทั้งที่ระบบกำลัง
+  // ปกป้องเขาอยู่ · ผู้ใช้ที่คิดว่าระบบพังจะลองซ้ำ ๆ แทนที่จะรอ และจะโทรหาซัพพอร์ต
+  const catalogued = lookupErrorCode(code);
+  const small = DEFAULT_ERROR_MESSAGES[code];
+  const generic = DEFAULT_ERROR_MESSAGES.INTERNAL_SERVER_ERROR;
+  const resolvedMessage = message || catalogued?.messageEn || small?.en || generic.en;
+  const resolvedMessageTh = messageTh || catalogued?.messageTh || small?.th || generic.th;
 
   return res.status(status).json({
     success: false,

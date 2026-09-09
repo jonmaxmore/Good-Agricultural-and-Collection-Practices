@@ -56,6 +56,51 @@ function stopCleanupInterval() {
  * @param {number} options.max - Max requests per window
  * @param {string} options.message - Error message
  */
+/**
+ * หากุญแจนับที่เป็น "เส้นทาง" ไม่ใช่ "ค่าในเส้นทาง"
+ *
+ * เดิมกุญแจคือ `ratelimit:${ip}:${req.path}` ซึ่งรวมค่าพารามิเตอร์ใน URL เข้าไปด้วย
+ * ผลคือทุกค่าที่ต่างกันได้ถังนับของตัวเอง และ limiter ถูกข้ามด้วยการเปลี่ยนพารามิเตอร์
+ * ซึ่งคือสิ่งที่การไล่เดา (enumeration) ทำพอดี
+ *
+ * วัดจริง 2026-09-09 บน /api/public/verify/:certificateNumber (ตั้งไว้ 30 ครั้ง/นาที):
+ *   ยิงเลขเดิม 45 ครั้ง      -> 30 ผ่าน 15 ถูกบล็อก   (limiter ทำงาน)
+ *   ยิงเลขต่างกัน 45 ครั้ง   -> 45 ผ่านทั้งหมด        (limiter ถูกข้าม)
+ *   header ตอบ X-RateLimit-Remaining: 29 ทุกเลขใหม่ = ถังใหม่ทุกครั้ง
+ *
+ * คอมเมนต์ใน routes/api/auth/public.js เขียนว่า "enumeration is no longer practical"
+ * เพราะเลขใบรับรองไม่เรียงลำดับ — จริง แต่ชั้นที่สองที่ควรกันไว้ไม่ทำงานเลย
+ *
+ * วิธีหา: ถาม express ก่อน — `req.baseUrl + req.route.path` คือรูปแบบที่ประกาศไว้จริง
+ * เช่น '/api/public' + '/verify/:certificateNumber' · แม่นยำเพราะไม่ได้เดา
+ *
+ * ถ้า express ยังไม่ผูก route (limiter ถูกแขวนระดับ app ไม่ใช่ระดับ route) ค่อยถอย
+ * ไปเดาจากหน้าตาของ segment · การเดาด้วยความยาวอย่างเดียวไม่พอ — ค่าสั้นอย่าง
+ * '/verify/A1' จะลอด — จึงถือว่า segment สุดท้ายของพาธที่ลึกกว่า 2 ชั้นเป็นค่าเสมอ
+ * เมื่อมันไม่ใช่คำที่รู้จัก
+ */
+function fallbackPatternOf(pathname) {
+  return String(pathname || '/')
+    .split('/')
+    .map((seg) => {
+      if (!seg) { return seg; }
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(seg)) { return ':param'; }
+      if (/^\d+$/.test(seg)) { return ':param'; }
+      if (seg.length >= 8 && /\d/.test(seg)) { return ':param'; }
+      return seg;
+    })
+    .join('/');
+}
+
+/** รูปแบบเส้นทางของ request นี้ — ถาม express ก่อน แล้วค่อยเดา */
+function routeKeyOf(req) {
+  const declared = req.route && typeof req.route.path === 'string' ? req.route.path : null;
+  if (declared) {
+    return `${req.baseUrl || ''}${declared}`;
+  }
+  return fallbackPatternOf(req.path);
+}
+
 function createRateLimiter(options = {}) {
     const {
         windowMs = 15 * 60 * 1000, // 15 minutes default
@@ -74,7 +119,7 @@ function createRateLimiter(options = {}) {
     return async (req, res, next) => {
         const ip = getRequestIp(req);
         const customKey = typeof keyGenerator === 'function' ? keyGenerator(req) : null;
-        const key = customKey ? `ratelimit:${customKey}` : `ratelimit:${ip}:${req.path}`;
+        const key = customKey ? `ratelimit:${customKey}` : `ratelimit:${ip}:${routeKeyOf(req)}`;
         const now = Date.now();
 
         let count = 0;
