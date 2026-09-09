@@ -81,16 +81,18 @@ const reportController = {
                 // Stripe-only revenue (the bank-slip rail is retired): settled
                 // revenue is the invoices marked paid in the window, whatever the
                 // rail. Was revenueFromApprovedSlips over APPROVED PaymentSlip rows.
-                const paidInvoices = await prisma.invoice.findMany({
-                    where: {
-                        paidAt: { gte: startDate },
-                        isDeleted: false,
-                    },
-                    select: { totalAmount: true },
+                // GACP Lite ไม่ออกใบแจ้งหนี้ — โมเดล Invoice ถูกตัดออกตอนแยก repo
+                // สิ่งที่ระบบนี้รู้เรื่องเงินคือแถว FeePayment: เจ้าพนักงานยืนยันว่ารับเงิน
+                // งวดไหน จำนวนเท่าไร เมื่อไร (routes/api/fees/fee-payments.js)
+                // prisma.invoice เป็น undefined อยู่ก่อนหน้านี้ ตัวเลขจึงตกเข้า catch
+                // ข้างล่างและรายงานว่าอ่านไม่ได้ทุกครั้ง
+                const confirmedFees = await prisma.feePayment.findMany({
+                    where: { confirmedAt: { gte: startDate } },
+                    select: { amountThb: true },
                 });
                 revenueData = {
-                    totalRevenue: paidInvoices.reduce((sum, inv) => sum + Number(inv.totalAmount || 0), 0),
-                    transactionCount: paidInvoices.length,
+                    totalRevenue: confirmedFees.reduce((sum, fee) => sum + Number(fee.amountThb || 0), 0),
+                    transactionCount: confirmedFees.length,
                 };
             } catch (revenueError) {
                 // Report the failure rather than silently returning zero — a

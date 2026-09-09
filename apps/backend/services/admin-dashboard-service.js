@@ -66,22 +66,26 @@ async function countPendingRevisionDeadlinesPastDue(orgId, now) {
  * Sum completed-payment amount in [since, now] for an org.
  */
 async function sumCompletedPaymentsSince(orgId, since) {
-    // There is NO `Payment` model — prisma.payment was undefined → TypeError,
-    // swallowed by the caller's bare catch → the admin dashboard reported
-    // revenue 0 forever. Sum the paid Invoices (canonical revenue) instead,
-    // org-scoped. Returns the caller's expected `{ _sum: { amount } }` shape.
-    const orgFilter = orgId ? { organizationId: orgId } : {};
-    const agg = await prisma.invoice.aggregate({
-        _sum: { totalAmount: true },
+    // บั๊กเดิมกลับมาอีกชั้นหนึ่ง · คอมเมนต์ที่เคยอยู่ตรงนี้เขียนไว้เองว่า "ไม่มีโมเดล
+    // Payment — prisma.payment เป็น undefined แล้วถูก catch เปล่า ๆ ของผู้เรียกกลืน
+    // แดชบอร์ดผู้ดูแลจึงรายงานรายรับเป็น 0 ตลอดกาล" แล้วแก้ด้วยการไปใช้ Invoice
+    // ซึ่งตอนนี้ก็ถูกตัดออกจาก Lite ไปแล้วเหมือนกัน — อาการเดิมเป๊ะ ๆ
+    //
+    // GACP Lite ไม่ออกใบแจ้งหนี้และไม่เก็บเงินเอง สิ่งที่ระบบนี้รู้คือแถว FeePayment
+    // ที่เจ้าพนักงานยืนยันการรับเงิน · amountThb เป็น Int (สตางค์ไม่มีในค่าธรรมเนียม
+    // ที่ตั้งไว้) จึงไม่ต้องแปลง Decimal
+    //
+    // ไม่ตัด organizationId ออกจากเงื่อนไข: FeePayment ไม่มีคอลัมน์นั้น ผูกกับผู้เช่า
+    // ผ่านคำขอที่มันอ้างถึง
+    const orgFilter = orgId ? { application: { organizationId: orgId } } : {};
+    const agg = await prisma.feePayment.aggregate({
+        _sum: { amountThb: true },
         where: {
             ...orgFilter,
-            isDeleted: false,
-            status: { in: ['paid', 'PAID', 'PAID_PENDING_RECEIPT', 'RECEIPT_ISSUED'] },
-            paidAt: { gte: since },
+            confirmedAt: { gte: since },
         },
     });
-    // totalAmount is Decimal(15,2) → coerce to Number for the dashboard tile.
-    return { _sum: { amount: agg._sum.totalAmount == null ? 0 : Number(agg._sum.totalAmount) } };
+    return { _sum: { amount: agg._sum.amountThb == null ? 0 : Number(agg._sum.amountThb) } };
 }
 
 /**

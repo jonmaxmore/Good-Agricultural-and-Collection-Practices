@@ -113,7 +113,7 @@ async function assembleUserDataExport(userId) {
         drafts,
         farms,
         certificates,
-        invoices,
+        feePayments,
         notifications,
         reportSubmissions,
     ] = await Promise.all([
@@ -179,15 +179,28 @@ async function assembleUserDataExport(userId) {
                 expiryDate: true,
             },
         }),
-        fkKey ? prisma.invoice.findMany({
-            where: { healthId: fkKey },
+        // GACP Lite ไม่ออกใบแจ้งหนี้ — ลูกค้าเก็บเงินด้วยช่องทางของตัวเอง แล้วเจ้าหน้าที่
+        // บันทึกการรับเงินเป็นแถว FeePayment (คำตัดสิน operator 2026-09-08) · โมเดล
+        // Invoice ถูกตัดออกตอนแยก repo แต่คำสั่งนี้ยังถามหามัน ผลคือ prisma.invoice
+        // เป็น undefined และประตูขอสำเนาข้อมูลของตัวเองตอบ 500
+        //
+        // วัดจริง 2026-09-09 ก่อนแก้:
+        //   GET /api/auth/health/me/export -> 500
+        //   log: TypeError: Cannot read properties of undefined (reading 'findMany')
+        //        at assembleUserDataExport (services/pdpa-service.js:182)
+        //
+        // นี่คือสิทธิ์ตาม PDPA ม.30 (ขอเข้าถึงและขอรับสำเนาข้อมูลของตนเอง) จึงไม่ใช่
+        // แค่ปุ่มที่พัง · สิ่งที่ต้องอยู่ในสำเนาคือบันทึกการรับเงินที่ผูกกับคำขอของเขา
+        fkKey ? prisma.feePayment.findMany({
+            where: { application: { healthId: fkKey } },
             select: {
                 id: true,
-                invoiceNumber: true,
-                serviceType: true,
+                phase: true,
+                amountThb: true,
+                externalReference: true,
+                note: true,
                 applicationId: true,
-                createdAt: true,
-                updatedAt: true,
+                confirmedAt: true,
             },
         }) : Promise.resolve([]),
         prisma.notification.findMany({
@@ -232,7 +245,7 @@ async function assembleUserDataExport(userId) {
         drafts,
         farms,
         certificates,
-        invoices,
+        feePayments,
         notifications,
         reportSubmissions,
         notice: 'รายการข้อมูลบางส่วนอาจถูกระงับการลบไว้เนื่องจากเป็นเอกสารที่ต้องเก็บรักษาตามกฎหมาย ดูฟิลด์ subject.retainUntil',

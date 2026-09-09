@@ -97,13 +97,43 @@ router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Check for dependencies (this is a simplified check, ideally should check PlantingCycles)
-        const cycles = await prisma.plantingCycle.findFirst({
-            where: { plantSpeciesId: id },
+        // ตรวจว่ามีอะไรผูกอยู่ก่อนลบ
+        //
+        // เดิมถาม prisma.plantingCycle ซึ่งถูกตัดออกพร้อมกับ T&T — เป็น undefined
+        // การเรียก .findFirst บนนั้นโยน TypeError ทำให้ประตูตอบ 500 ทุกครั้ง (ไม่ใช่
+        // 400 หรือ 200) แปลว่าลบชนิดพืชไม่ได้เลย และข้อความก็ไม่ได้บอกเหตุผลจริง
+        //
+        // สิ่งที่ผูกกับชนิดพืชใน Lite คือคำขอ — Application.plantId
+        // (prisma/schema/application.prisma:303) ลบชนิดพืชที่มีคำขออ้างอยู่ไม่ได้
+        // เพราะคำขอนั้นจะเหลือรหัสพืชที่แปลไม่ออก
+        const species = await prisma.plantSpecies.findUnique({
+            where: { id },
+            select: { code: true },
         });
+        if (!species) {
+            return res.status(404).json({ success: false, error: 'ไม่พบชนิดพืชนี้' });
+        }
 
-        if (cycles) {
-            return res.status(400).json({ success: false, error: 'Cannot delete plant with existing planting cycles' });
+        // PlantSpecies.code คือ 'CAN' ส่วน Application.plantId คือ slug ของวิซาร์ด
+        // ('cannabis') · config/plant-species-slugs.js เขียนไว้ว่าเป็น "ที่เดียวที่
+        // สองคำศัพท์มาเจอกัน" จึงแปลผ่านมัน ไม่เขียนตัวแปลใบที่สอง
+        const slugs = Object.entries(PLANT_SLUG_TO_CODE)
+            .filter(([, code]) => code === species.code)
+            .map(([slug]) => slug);
+
+        const usedBy = slugs.length
+            ? await prisma.application.findFirst({
+                where: { plantId: { in: slugs }, isDeleted: false },
+                select: { id: true },
+            })
+            : null;
+
+        if (usedBy) {
+            return res.status(400).json({
+                success: false,
+                error: 'Cannot delete plant species that applications still reference',
+                messageTh: 'ลบชนิดพืชนี้ไม่ได้ เพราะมีคำขออ้างถึงอยู่',
+            });
         }
 
         await prisma.plantSpecies.delete({ where: { id } });

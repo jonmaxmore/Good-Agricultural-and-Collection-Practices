@@ -22,7 +22,7 @@ const { authenticateProvider, authenticateAny } = require('../../../middleware/a
 const { sendSuccessResponse, sendErrorResponse } = require('../../../shared/api-response');
 const { writeApplicationStatus } = require('../../../services/application-status-writer');
 const { canRoleTransition } = require('../../../services/workflow-transition-service');
-const { normalizeRole } = require('../../../shared/canonical-rbac');
+const { normalizeRole, isProviderRole } = require('../../../shared/canonical-rbac');
 const logger = require('../../../shared/logger');
 
 const router = express.Router();
@@ -155,7 +155,23 @@ router.get('/:applicationId', authenticateAny, async (req, res) => {
 
         // ผู้ยื่นเห็นได้เฉพาะใบของตัวเอง · ตอบ 404 ไม่ใช่ 403 กับใบของคนอื่น เพราะ 403
         // ยืนยันว่าใบนั้นมีอยู่จริง ซึ่งเป็นข้อมูลที่ผู้ถามไม่ควรได้
-        const isOfficer = Boolean(req.user?.providerId) || normalizeRole(req.user?.role) !== 'health';
+        // ตัดสินว่า "เป็นเจ้าหน้าที่" จากการที่บทบาทอยู่ในรายชื่อเจ้าหน้าที่จริง ๆ
+        // ไม่ใช่จากการที่มัน "ไม่ใช่ health"
+        //
+        // normalizeRole คืน null กับทุกคำที่ไม่อยู่ใน ROLE_ALIASES (canonical-rbac.js:204)
+        // เงื่อนไขเดิมจึงอ่านว่า null !== 'health' = จริง = เป็นเจ้าหน้าที่ · ค่าเริ่มต้น
+        // ของการตัดสินสิทธิ์เป็น "ผ่าน" ซึ่งกลับด้าน
+        //
+        // วัดจริง 2026-09-09 ผู้ใช้คนเดียวกัน เปลี่ยนแค่ค่า role ในโทเคน:
+        //   role: 'health'         -> 404  (ถูกต้อง ไม่ใช่ใบของเขา)
+        //   role: 'farmer_legacy'  -> 200  พร้อมค่าธรรมเนียม เลขคำขอ และชื่อเจ้าหน้าที่
+        //                                  ที่ยืนยันการชำระ ของผู้ยื่นคนอื่น
+        //
+        // บทบาทที่ระบบไม่รู้จักเกิดได้จริง: โทเคนที่ออกก่อนการรวบบทบาท (Step 2.1)
+        // หรือแถวผู้ใช้ที่มีค่า role ซึ่งไม่ได้อยู่ในรายการแล้ว
+        //
+        // isProviderRole ล้มแบบปิดอยู่แล้ว — คำที่ไม่รู้จักคืน false (canonical-rbac.js:218)
+        const isOfficer = isProviderRole(req.user?.role);
         if (!isOfficer) {
             // Application.healthId ชี้ไปที่ User.canonicalId — ไม่ใช่ User.id
             // (prisma/schema/application.prisma:12-13) การเทียบกับ req.user.id จึงผิดเสมอ

@@ -26,63 +26,16 @@ const { prisma } = require('./prisma-database');
 
 class DocumentService {
     // ─────────────────────────────────────────────────────────────────────
-    // SOPDocument
+    // SOPDocument — ถูกตัดออกจาก GACP Lite
+    //
+    // ตัวสร้าง SOP อยู่ในรายการ PURGE ของสเปก Lite โมเดล SOPDocument จึงไม่มีใน
+    // สคีมา · ห้าเมธอดที่เคยอยู่ตรงนี้ (list / find / create / update / softDelete)
+    // เรียก prisma.sOPDocument ซึ่งเป็น undefined ทุกตัว และไม่มีเส้นทางไหนเรียกมัน
+    // แล้ว — routes/api/documents/sop-documents.js ไม่ได้ถูกนำมาด้วยตอนแยก repo
+    //
+    // เก็บโค้ดที่เรียกโมเดลซึ่งไม่มีอยู่ไว้ ไม่ได้แปลว่าฟีเจอร์ยังอยู่ แปลว่ามีระเบิดเวลา
+    // ให้คนที่มาต่อยอดเรียกโดยไม่รู้ว่ามันโยน TypeError
     // ─────────────────────────────────────────────────────────────────────
-
-    /**
-     * Replaces routes/api/documents/sop-documents.js:31 prisma.sOPDocument.findMany
-     */
-    async listSopDocumentsForUser(userId) {
-        return prisma.sOPDocument.findMany({
-            where: { userId, isDeleted: false },
-            orderBy: { updatedAt: 'desc' },
-        });
-    }
-
-    /**
-     * Replaces routes/api/documents/sop-documents.js:49 prisma.sOPDocument.findFirst
-     */
-    async findSopDocumentForUser(id, userId) {
-        return prisma.sOPDocument.findFirst({
-            where: { id, userId, isDeleted: false },
-        });
-    }
-
-    /**
-     * Replaces routes/api/documents/sop-documents.js:73 prisma.sOPDocument.create
-     */
-    async createSopDocument({ userId, sopType, title, formData }) {
-        return prisma.sOPDocument.create({
-            data: {
-                userId,
-                sopType,
-                title,
-                formData: formData || {},
-                status: 'DRAFT',
-            },
-        });
-    }
-
-    /**
-     * Replaces routes/api/documents/sop-documents.js:115 prisma.sOPDocument.update
-     */
-    async updateSopDocument(id, updateData) {
-        return prisma.sOPDocument.update({
-            where: { id },
-            data: updateData,
-        });
-    }
-
-    /**
-     * Replaces routes/api/documents/sop-documents.js:139 prisma.sOPDocument.update
-     * (soft delete)
-     */
-    async softDeleteSopDocument(id) {
-        return prisma.sOPDocument.update({
-            where: { id },
-            data: { isDeleted: true, deletedAt: new Date() },
-        });
-    }
 
     // ─────────────────────────────────────────────────────────────────────
     // DocumentTemplate (global registry)
