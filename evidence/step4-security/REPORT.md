@@ -21,7 +21,7 @@
 | A01 Broken Access Control (IDOR/BOLA) | 🟠 **2 ช่อง — แก้แล้ว** (SEC-06, SEC-07) |
 | A01 Privilege escalation | ✅ ป้องกันได้ |
 | A02 Cryptographic / token | ✅ ป้องกันได้ |
-| A03 Injection | ✅ ไม่พบทางเข้า |
+| A03 Injection | 🟡 **CSV formula — แก้แล้ว** (SEC-08) |
 | A04 **Rate limiting** | 🟠 **ถูกข้ามได้ — แก้แล้ว** |
 | A05 Security misconfiguration | ⬜ ยังไม่ได้วัดบน staging (ดู SEC-04 ที่แก้แล้ว) |
 | A09 Logging (PII) | ✅ ไม่พบ PII ใน log |
@@ -204,6 +204,37 @@ GET /uploads/root2.txt        ไม่มีโทเคน:401   ผู้ย�
 เฝ้าโดย `__tests__/unit/every-sensitive-upload-is-decided-by-ownership.test.js` —
 ขับ middleware ตัวจริง ไม่ใช่ grep ข้อความ · **พิสูจน์ว่าแดงได้:** ย้อนโค้ดกลับเป็นรายชื่อ
 prefix แบบเดิม → แดง 7 ตัวจาก 17 · คืนโค้ดที่แก้ → เขียวครบ
+
+---
+
+## 🟡 MEDIUM · SEC-08 · ไฟล์ CSV ที่ส่งออกกลายเป็นสูตรใน Excel ได้
+
+**ตำแหน่ง:** ตัวส่งออกฝั่งเบราว์เซอร์ 3 ตัว
+`app/admin/certificates/client-view.tsx` · `app/provider/scheduler/queue/client-view.tsx` ·
+`app/provider/analytics/work/client-view.tsx`
+
+Excel และ LibreOffice ลอกเครื่องหมายคำพูดออกก่อน แล้วประเมินช่องที่ขึ้นต้นด้วย
+`=` `+` `-` `@` แท็บ หรือ CR เป็นสูตร (CWE-1236) · การใส่คำพูดตาม RFC 4180 แก้เรื่อง
+**ตัวคั่น** ไม่ได้แก้เรื่อง **สูตร** — และทั้งสามตัวทำแค่ใส่คำพูด
+
+**ระบบตัดสินเรื่องนี้ไปแล้วฝั่ง backend**: `apps/backend/shared/csv-utils.js`
+(`neutralizeCsvFormula`, audit C5-04) ถูกใช้อยู่ 4 จุด — `admin/audit-log.js:84`,
+`audit-log-viewer-helpers.js:70`, `trial-balance-service.js:376`,
+`dataset-export-service.js:119` · ฝั่งเบราว์เซอร์ไม่ได้ตามมาด้วย
+
+เส้นทาง: ชื่อฟาร์มมาจากช่องที่ผู้ยื่นพิมพ์เอง และ `routes/api/farm/farms.js:161`
+ตรวจแค่ว่ามีค่าหรือไม่ · ค่าถูกคัดลอกขึ้นแถวใบรับรอง แล้วนอนอยู่จนกว่าผู้ดูแลจะเปิด
+`/admin/certificates` กดส่งออก และเปิดไฟล์บนเครื่องตัวเอง
+
+**แก้แล้ว** — `apps/web-app/src/lib/csv.ts` กันสูตร **ก่อน** ใส่คำพูด (ลำดับสำคัญ:
+กันหลังใส่คำพูดไม่มีผล เพราะ Excel ลอกคำพูดออกก่อนประเมิน) และใช้ชุดอักขระเดียวกับ
+ฝั่ง backend · เทสตรึงว่าทั้งสองฝั่งตัดสินเหมือนกัน ถ้าฝั่งใดขยายชุดอักขระ อีกฝั่ง
+ต้องตามทันที · เฝ้าโดย `lib/__tests__/a-csv-cell-must-not-become-a-formula.test.ts`
+(19 เทส)
+
+> **บันทึกความคลาดเคลื่อน:** โค้ดที่แก้ข้อนี้ถูก commit ไปพร้อมกับงาน Step 3.1 ใน
+> `b3d845e` โดยที่ข้อความ commit นั้นไม่ได้พูดถึงเลย — ผมใช้ `git add -A` แล้วไฟล์
+> ที่แก้ค้างไว้ติดไปด้วย · บันทึกไว้ตรงนี้เพื่อให้คนที่ตามอ่าน log หาเจอ
 
 ---
 
