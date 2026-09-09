@@ -18,6 +18,7 @@ import {
     type SchedulingQueueFilters,
 } from '@/lib/services/audit-service';
 import { notifications } from '@/lib/notifications';
+import { csvRow } from '@/lib/csv';
 
 /**
  * SchedulerQueueClient — Iter 25 step 2 client island.
@@ -133,13 +134,8 @@ export default function SchedulerQueueClient() {
             });
             return;
         }
-        // RFC-4180 escape: wrap a cell in quotes when it holds a comma / quote /
-        // newline and double any internal quote. Thai applicant names + free-text
-        // scope can contain commas, so a naive comma-join would corrupt columns.
-        const esc = (value: unknown): string => {
-            const s = value === null || value === undefined ? '' : String(value);
-            return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-        };
+        // ชื่อผู้สมัครและขอบเขตเป็นข้อความอิสระ จึงต้องกันทั้งสองเรื่อง: ตัวคั่น
+        // (เครื่องหมายคำพูด) และสูตร (นำหน้าด้วย ') — lib/csv ทำตามลำดับที่ถูก
         const headers = ['เลขที่คำขอ', 'ผู้สมัคร', 'ประเภทพืช', 'วันที่ชำระค่าตรวจ', 'ภาค', 'ขอบเขต', 'รอ (วัน)'];
         const rows = items.map((it) => [
             it.applicationNumber,
@@ -151,7 +147,7 @@ export default function SchedulerQueueClient() {
             it.scope || '',
             it.ageDays,
         ]);
-        const csv = [headers, ...rows].map((r) => r.map(esc).join(',')).join('\r\n');
+        const csv = [headers, ...rows].map((r) => csvRow(r)).join('\r\n');
         // UTF-8 BOM so Excel renders the Thai headers/values correctly.
         const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);

@@ -23,6 +23,7 @@ import {
 import { notifications } from '@/lib/notifications';
 import { providerApiPaths } from '@/lib/services/provider-api';
 import { apiClient } from '@/lib/api/api-client';
+import { csvRow } from '@/lib/csv';
 
 interface BucketRow {
     key: string;
@@ -376,9 +377,8 @@ function downloadCsv(data: KpiPayload | null) {
     lines.push('# Top Performers');
     lines.push('userId,name,role,completed');
     for (const p of data.topPerformers) {
-        // Quote name in case it contains a comma; CSV escaping is minimal.
-        const safeName = `"${(p.name || '').replace(/"/g, '""')}"`;
-        lines.push(`${p.userId},${safeName},${p.role || ''},${p.completed}`);
+        // ชื่อคนเป็นข้อความอิสระ ต้องกันทั้งตัวคั่นและสูตร
+        lines.push(csvRow([p.userId, p.name || '', p.role || '', p.completed]));
     }
     lines.push('');
     lines.push('# State Counts (right now)');

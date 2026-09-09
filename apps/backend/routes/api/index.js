@@ -85,6 +85,12 @@ router.use('/plants', require('./farm/plants'));
 router.use('/fees', require('./fees/fee-payments'));
 
 // ── ตรวจเอกสารและตรวจแปลง ───────────────────────────────────────────────────
+// หน้าเปลี่ยนผู้ตรวจของคนจัดคิว (provider/scheduler/reassign) เรียก
+// /api/audits/reassign/reassignable กับ /api/audits/reassign/:id/reassign และไฟล์
+// routes/api/audit/audits-reassign.js ประกาศเส้นทางทั้งสองไว้ครบ — แต่ไม่เคยถูก mount
+// วัดจริง 2026-09-09: ทั้งสองเส้นทางตอบ 404 หน้าจอจึงโหลดขึ้นมาแล้วทำอะไรไม่ได้เลย
+// mount ก่อน /audits เพราะ /audits/:id จะกลืน /audits/reassign
+router.use('/audits/reassign', require('./audit/audits-reassign'));
 router.use('/audits', require('./audit/audits'));
 router.use('/audit/scheduling', require('./audit/scheduling'));
 router.use('/audit/onsite', require('./audit/onsite'));

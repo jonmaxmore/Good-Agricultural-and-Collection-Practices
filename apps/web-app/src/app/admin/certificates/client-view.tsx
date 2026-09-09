@@ -25,6 +25,7 @@ import {
     normalizeCertificateStatus,
     type CertificateStatusKey,
 } from './certificate-display';
+import { csvRow } from '@/lib/csv';
 
 /**
  * /admin/certificates client view — R3-C.
@@ -77,20 +78,12 @@ function formatThaiDate(dateStr: string | null | undefined): string {
 }
 
 /**
- * RFC-4180-ish CSV escaping: wrap in quotes when the value contains
- * a comma, quote, or newline; double existing quotes.
+ * การใส่เครื่องหมายคำพูดแก้เรื่องตัวคั่น ไม่ได้แก้เรื่องสูตร — Excel ลอกคำพูดออกก่อน
+ * แล้วประเมินช่องที่ขึ้นต้นด้วย = + - @ · ชื่อฟาร์มมาจากช่องที่ผู้ยื่นพิมพ์เอง จึงต้อง
+ * ผ่าน lib/csv ซึ่งกันสูตรก่อนใส่คำพูด เหมือนที่ backend ทำอยู่แล้ว (audit C5-04)
  */
-function csvCell(value: string | number | null | undefined): string {
-    if (value === null || value === undefined) return '';
-    const s = String(value);
-    if (/[",\n\r]/.test(s)) {
-        return `"${s.replace(/"/g, '""')}"`;
-    }
-    return s;
-}
-
 function toCsvRow(values: ReadonlyArray<string | number | null | undefined>): string {
-    return values.map(csvCell).join(',');
+    return csvRow([...values]);
 }
 
 /**
