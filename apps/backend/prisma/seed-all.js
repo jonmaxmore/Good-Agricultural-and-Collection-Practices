@@ -60,6 +60,25 @@ const CONFIG_SEEDS = [
   // `pnpm db:seed` จะพังทันทีที่ลูกค้ารันครั้งแรก
 ];
 
+/**
+ * กฎหมายเอกสารแนบ กทล.1 — อยู่ในตาราง requirement_rules ซึ่งอยู่ในอาการเดียวกับที่
+ * หัวไฟล์นี้บรรยายไว้: migration สร้างตารางให้ แต่ไม่ใส่แถว
+ *
+ * วัดจริง 2026-09-09 บนฐานข้อมูลที่ migrate ครบแล้ว: requirement_rules มี 0 แถว
+ * ผลคือประตูตรวจเอกสารตอบว่า **ครบแล้ว** โดยขอเอกสารบังคับศูนย์ฉบับ — คำขอกัญชา
+ * ยื่นผ่านได้โดยไม่ต้องแนบอะไรเลย:
+ *
+ *   ก่อนใส่กติกา : ช่องเอกสาร 3 · ขาด 0 · complete: true
+ *   หลังใส่กติกา : ช่องเอกสาร 13 · ขาด 10 · complete: false
+ *
+ * สคริปต์นี้ idempotent โดยเนื้อหา (ถามทะเบียนก่อนว่ามีกฎที่บังคับใช้อยู่แล้วหรือไม่
+ * สำหรับมิติเดียวกัน ณ วันเดียวกัน) จึงรันซ้ำได้ · แยกจาก CONFIG_SEEDS เพราะมันอยู่
+ * ที่ scripts/ และต้องส่ง --apply
+ */
+const LAW_SEEDS = [
+  ['../scripts/seed-cannabis-requirement-rules.js', ['--apply']],
+];
+
 // Sentinel counts — if ALL are non-zero the DB is already configured and we
 // skip (protecting any operator edits to these tables). Keyed by Prisma model
 // accessor (verified against the seeds that write them).
@@ -69,6 +88,8 @@ const SENTINELS = [
   ['supplementaryCriterion', 'supplementary_criteria'],
   ['plantSpecies', 'plant_species'],
   ['wizardStepConfig', 'wizard_step_configs'],
+  // ทะเบียนกฎหมายเอกสาร — ว่างเปล่า = ประตูตรวจเอกสารไม่ขออะไรเลย
+  ['requirementRule', 'requirement_rules'],
 ];
 
 async function alreadySeeded(prisma) {
@@ -82,11 +103,11 @@ async function alreadySeeded(prisma) {
   return { seeded, summary };
 }
 
-function runSeed(file) {
+function runSeed(file, args = []) {
   const seedPath = path.join(__dirname, file);
   const backendRoot = path.resolve(__dirname, '..');
-  console.log(`\n──────── ${file} ────────`);
-  const result = spawnSync('node', [seedPath], {
+  console.log(`\n──────── ${file}${args.length ? ' ' + args.join(' ') : ''} ────────`);
+  const result = spawnSync('node', [seedPath, ...args], {
     stdio: 'inherit',
     cwd: backendRoot, // mirror `node prisma/seed-*.js` run from apps/backend
   });
@@ -121,6 +142,11 @@ async function main() {
   // do not hold an extra pooled connection while they run.
   for (const file of CONFIG_SEEDS) {
     runSeed(file);
+  }
+
+  // กฎหมายเอกสารแนบ — ต้องมาหลัง seed-plants.js เพราะกฎอ้างรหัสพืช
+  for (const [file, args] of LAW_SEEDS) {
+    runSeed(file, args);
   }
 
   console.log('\n[seed-all] all config seeds completed.');

@@ -68,6 +68,6 @@
     "node": "20.x"
   },
   "prisma": {
-    "seed": "node prisma/seed-gacp.js && node prisma/seed-bank-accounts.js"
+    "seed": "node prisma/seed-all.js"
   }
 }
