@@ -56,6 +56,7 @@ import {
   type EditableField,
   type EditableSection,
 } from '@/components/application/application-document-edit-config';
+import { safeSrc } from '@/lib/safe-url';
 
 type InfoItemProps = {
   label: string;
@@ -630,7 +631,7 @@ export function ApplicationDocumentView({
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-foreground">{document.name}</p>
                     <a
-                      href={document.url}
+                      href={safeSrc(document.url)}
                       target="_blank"
                       rel="noreferrer"
                       className="text-xs font-semibold text-primary no-underline"
@@ -640,7 +641,7 @@ export function ApplicationDocumentView({
                   </div>
 
                   {isImageFileUrl(document.url) ? (
-                    <Image src={document.url} alt={document.name} className="h-44 w-full object-cover" />
+                    <Image src={safeSrc(document.url)} alt={document.name} className="h-44 w-full object-cover" />
                   ) : null}
 
                   {isPdfFileUrl(document.url) ? (
@@ -650,7 +651,7 @@ export function ApplicationDocumentView({
                         PDF document
                       </div>
                       <iframe
-                        src={document.url}
+                        src={safeSrc(document.url)}
                         title={document.name}
                         className="hidden h-56 w-full rounded-xl border border-border md:block"
                       />
@@ -665,7 +666,7 @@ export function ApplicationDocumentView({
             <div className="group-item mt-1">
               <p className="text-xs text-muted-foreground">วิดีโอประกอบ</p>
               <a
-                href={asString(formData.youtubeUrl) || asString(formData.videoLink)}
+                href={safeSrc(asString(formData.youtubeUrl) || asString(formData.videoLink))}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-1 inline-block text-sm font-medium text-primary no-underline"

@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { resolveDocumentUrl, DOCUMENT_FIELDS, type FormDataRecord } from "./provider-application-detail-config";
 import { useLanguage } from '@/lib/i18n/language-context';
+import { safeSrc } from "@/lib/safe-url";
 
 export function DocumentsTabPanel({
   formData,
@@ -30,6 +31,8 @@ export function DocumentsTabPanel({
   // are not blocked when working from a tablet / phone.
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
+  // url ที่มาถึงตรงนี้ผ่าน resolveDocumentUrl มาแล้ว แต่ประตูนี้เป็น state ที่ไหลลง
+  // iframe จึงกรองซ้ำที่นี่ด้วย — สองด่านต้องไม่พึ่งกันในการตัดสินเรื่องเดียว
   const handlePreview = (url: string) => {
     setPreviewDocUrl(url);
     setMobilePreviewOpen(true);
@@ -103,7 +106,7 @@ export function DocumentsTabPanel({
           <CardContent className="p-0">
             {previewDocUrl ? (
               <iframe
-                src={previewDocUrl}
+                src={safeSrc(previewDocUrl)}
                 className="h-[600px] w-full border-0"
                 title="ตัวอย่างเอกสาร"
               />
@@ -142,7 +145,7 @@ export function DocumentsTabPanel({
           </DialogHeader>
           {previewDocUrl ? (
             <iframe
-              src={previewDocUrl}
+              src={safeSrc(previewDocUrl)}
               className="h-[70vh] w-full rounded-xl border-0"
               title="ตัวอย่างเอกสาร (มือถือ)"
             />

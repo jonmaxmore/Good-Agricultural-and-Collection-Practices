@@ -3,6 +3,7 @@ import {
   WORKFLOW_STATES,
   getSemanticColor,
 } from '@/lib/constants/workflow-states';
+import { safeUrl } from "@/lib/safe-url";
 
 export interface WorkflowEvent {
   timestamp?: string;
@@ -262,8 +263,10 @@ export function resolveDocumentUrl(formData: FormDataRecord | undefined, key: st
     return null;
   }
 
-  const direct = formData[key];
-  if (typeof direct === "string" && direct.trim()) {
+  // safeUrl กันค่าที่กลายเป็นโค้ดได้ (javascript: ฯลฯ) · คืน null ก็คือ "ไม่มีเอกสาร"
+  // ซึ่งหน้าจอรองรับอยู่แล้ว (ป้าย Missing) — ไม่มีทางแสดงลิงก์ที่กดแล้วรันโค้ด
+  const direct = safeUrl(formData[key]);
+  if (direct) {
     return direct;
   }
 
@@ -272,7 +275,7 @@ export function resolveDocumentUrl(formData: FormDataRecord | undefined, key: st
   const uploadedDocuments = isRecord(formData.uploadedDocuments) ? formData.uploadedDocuments : null;
 
   const nested = documents?.[key] || applicantData?.[key] || uploadedDocuments?.[key];
-  return typeof nested === "string" && nested.trim() ? nested : null;
+  return safeUrl(nested);
 }
 
 export function pickString(value: unknown): string {

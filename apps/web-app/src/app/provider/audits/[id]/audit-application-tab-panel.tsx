@@ -16,6 +16,7 @@ import {
 } from '@tabler/icons-react';
 import { getApplicantName, toDateText, type ApplicationData } from './provider-audit-job-sheet-config';
 import { useSignedFileUrl } from '@/lib/hooks/use-signed-file-url';
+import { safeSrc, safeUrl } from '@/lib/safe-url';
 
 interface AuditApplicationTabPanelProps {
     application: ApplicationData;
@@ -120,11 +121,14 @@ export function AuditApplicationTabPanel({ application, formData, attachments }:
                                                 >
                                                     ดูเอกสาร
                                                 </Button>
+                                                {/* ที่อยู่ที่เปิดแล้วรันโค้ดได้ ไม่ควรมีปุ่มให้กด — ซ่อนทั้งปุ่ม
+                                                    ดีกว่าปล่อยลิงก์ตายที่ดูเหมือนใช้ได้ */}
+                                                {safeUrl(att.url) ? (
                                                 <Button
                                                     size="sm"
                                                     variant="subtle"
                                                     component="a"
-                                                    href={att.url}
+                                                    href={safeUrl(att.url) as string}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="min-h-[44px] min-w-[44px]"
@@ -133,6 +137,7 @@ export function AuditApplicationTabPanel({ application, formData, attachments }:
                                                 >
                                                     เปิดใหม่
                                                 </Button>
+                                                ) : null}
                                             </>
                                         ) : (
                                             <Badge color="gray" size="sm">ไม่มีเอกสาร</Badge>
@@ -265,7 +270,7 @@ export function AuditApplicationTabPanel({ application, formData, attachments }:
                                     </div>
                                 ) : isPdf ? (
                                     <iframe
-                                        src={docViewUrl ?? undefined}
+                                        src={safeSrc(docViewUrl)}
                                         className="h-full min-h-[500px] w-full"
                                         title={selectedDoc.label}
                                         style={{ transform: `scale(${zoom / 100}) rotate(${rotation}deg)`, transformOrigin: 'top left' }}
@@ -284,7 +289,7 @@ export function AuditApplicationTabPanel({ application, formData, attachments }:
                                          */}
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
-                                            src={docViewUrl ?? undefined}
+                                            src={safeSrc(docViewUrl)}
                                             alt={selectedDoc.label}
                                             className="max-w-full object-contain"
                                             style={{
@@ -298,15 +303,17 @@ export function AuditApplicationTabPanel({ application, formData, attachments }:
                                         <div className="text-center">
                                             <IconFileText size={48} className="mx-auto mb-2 text-slate-400" aria-hidden="true" />
                                             <p className="text-sm text-slate-500">ไม่สามารถแสดงตัวอย่างได้</p>
-                                            <Button
-                                                component="a"
-                                                href={docViewUrl ?? undefined}
-                                                target="_blank"
-                                                size="sm"
-                                                className="mt-2"
-                                            >
-                                                ดาวน์โหลดเอกสาร
-                                            </Button>
+                                            {safeUrl(docViewUrl) ? (
+                                                <Button
+                                                    component="a"
+                                                    href={safeUrl(docViewUrl) as string}
+                                                    target="_blank"
+                                                    size="sm"
+                                                    className="mt-2"
+                                                >
+                                                    ดาวน์โหลดเอกสาร
+                                                </Button>
+                                            ) : null}
                                         </div>
                                     </div>
                                 )}
