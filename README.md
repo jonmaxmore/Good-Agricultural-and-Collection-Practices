@@ -11,13 +11,20 @@
 ## เริ่มใช้งาน
 
 ```bash
-cp .env.example .env          # แล้วเติมค่าให้ครบ — สามค่าแรกไม่มีค่าเริ่มต้น
+cp .env.example .env          # แล้วเติมค่าให้ครบ — ค่าที่ว่างไว้ไม่มีค่าเริ่มต้นโดยตั้งใจ
 docker compose up -d --build
 docker compose exec api npx prisma migrate deploy --schema prisma/schema
-docker compose exec api node prisma/seed-lite.js
+docker compose exec api node prisma/seed-all.js    # ข้อมูลตั้งต้น + กฎหมายเอกสารแนบ
+docker compose exec api node prisma/seed-lite.js   # หน่วยงาน + ผู้ดูแลคนแรก
 ```
 
 เปิด http://localhost:3100 · API อยู่ที่ http://localhost:8100
+
+**อย่าข้าม `seed-all.js`** — migration สร้างแต่ตาราง ไม่ได้ใส่แถว · ข้ามแล้วระบบจะขึ้น
+ได้ตามปกติแต่ไม่มีชนิดพืช ไม่มีมาตรฐาน ไม่มีขั้นตอนในวิซาร์ด และที่สำคัญที่สุดคือ
+**ไม่มีกฎหมายเอกสารแนบ กทล.1** ซึ่งแปลว่าคำขอผ่านได้โดยไม่ต้องแนบเอกสารสักฉบับ
+(วัดจริง 2026-09-09: ก่อน seed ประตูตรวจเอกสารตอบ "ครบแล้ว" โดยขอเอกสารบังคับศูนย์ฉบับ ·
+หลัง seed ขอ 10 ฉบับ) · สคริปต์รันซ้ำได้ ไม่สร้างแถวซ้ำ
 
 ### บัญชีเจ้าหน้าที่
 

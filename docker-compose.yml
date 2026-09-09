@@ -30,6 +30,23 @@ services:
       timeout: 5s
       retries: 20
 
+  # โทเคนรีเฟรชอยู่ในนี้ · ไม่มี redis = ตรวจโทเคนไม่ได้ = ทุกคนหลุดล็อกอินเมื่อ
+  # access token หมดอายุ (token-revocation-service.js:110 ล้มแบบปิดโดยตั้งใจ)
+  # ตัวตรวจ env จึงบังคับ REDIS_URL ใน production — และ compose ต้องมีบริการให้จริง
+  redis:
+    image: redis:7-alpine
+    container_name: gacplite-redis
+    restart: unless-stopped
+    # ไม่เปิดพอร์ตออกนอกเครื่อง — ใช้กันเองในเครือข่ายของ compose เท่านั้น
+    command: ["redis-server", "--save", "60", "1", "--appendonly", "no"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   api:
     build:
       context: .
@@ -39,6 +56,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 8000
@@ -46,6 +65,14 @@ services:
       JWT_SECRET: ${JWT_SECRET:?ต้องตั้งใน .env — ระบบปฏิเสธที่จะบูตด้วยค่าเดา}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?ต้องตั้งใน .env}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ต้องตั้งใน .env — ใช้เข้ารหัสข้อมูลส่วนบุคคลในฐานข้อมูล}
+      # ฝั่งเจ้าหน้าที่เซ็นโทเคนด้วยกุญแจคนละดอกกับฝั่งบุคคลทั่วไป โดยตั้งใจ —
+      # โทเคนของผู้ยื่นจึงเปิดประตูเจ้าหน้าที่ไม่ได้แม้จะปลอมบทบาทสำเร็จ
+      # ไม่ตั้ง = แอปปฏิเสธที่จะบูตใน production (config/env-validator.js:76)
+      PROVIDER_JWT_SECRET: ${PROVIDER_JWT_SECRET:?ต้องตั้งใน .env — กุญแจโทเคนฝั่งเจ้าหน้าที่}
+      REDIS_URL: redis://redis:6379
+      # ใช้ทำ HMAC ของเลขบัตรประชาชนเพื่อค้นหาโดยไม่ต้องถอดรหัส
+      HMAC_KEY: ${HMAC_KEY:-}
+      SESSION_SECRET: ${SESSION_SECRET:-}
       CORS_ORIGINS: ${PUBLIC_WEB_URL:-http://localhost:3100}
       PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:3100}
       # ตัวตนของหน่วยงาน — ไม่ตั้ง = ใช้ของกรมฯ ต้นทาง (ดู .env.example)
@@ -91,5 +118,6 @@ services:
 
 volumes:
   db-data:
+  redis-data:
   uploads:
   signing-keys:
