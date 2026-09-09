@@ -94,6 +94,57 @@ router.use(authenticateProvider, requireRole(ROLE_GROUPS.AUDIT_STAFF));
  *                             type: string
  *                             format: date-time
  */
+/**
+ * ชื่อที่ต้องขึ้นบนคิวของคนจัดคิว
+ *
+ * นิติบุคคลถือใบรับรองในชื่อของตัวเอง (คำสั่ง operator 2026-09-07) ชื่อองค์กรจึงมาก่อน
+ * ชื่อบุคคล · ถ้าไม่รู้จริง ๆ ให้เป็น null ไม่ใช่สตริง 'N/A' — หน้าจอเขียน `|| '-'` ไว้แล้ว
+ * และ null บอกความจริงว่า "ไม่มีข้อมูล" ส่วน 'N/A' อ่านเหมือนเป็นชื่อ
+ */
+function applicantNameOf(app) {
+    const entityName = app?.entity?.displayName;
+    if (entityName) { return String(entityName).trim() || null; }
+    const person = [app?.applicant?.firstName, app?.applicant?.lastName]
+        .filter((part) => typeof part === 'string' && part.trim())
+        .join(' ')
+        .trim();
+    return person || null;
+}
+
+/** ชื่อผู้ตรวจที่รับมอบหมาย — null เมื่อยังไม่มอบหมาย */
+function auditorNameOf(app) {
+    const who = app?.auditor || app?.headAuditor || null;
+    const name = [who?.firstName, who?.lastName]
+        .filter((part) => typeof part === 'string' && part.trim())
+        .join(' ')
+        .trim();
+    return name || null;
+}
+
+/**
+ * แถวหนึ่งของคิวตรวจ
+ *
+ * ชื่อฟิลด์ตรงกับสิ่งที่มันเป็น: `plantId` คือพืช `areaType` คือลักษณะพื้นที่ · เดิม
+ * `plantType` ถูกป้อนด้วย `app.areaType` หน้าจอที่พาดหัวคอลัมน์ว่า "พืช" จึงแสดงคำว่า
+ * OUTDOOR ให้คนจัดคิวอ่าน · ไม่มีหน้าจอไหนกิน /api/audits อยู่ตอนนี้ การตั้งชื่อให้ถูก
+ * จึงไม่ทำให้ใครพัง และเป็นเวลาที่ถูกที่สุดที่จะทำ
+ */
+function auditQueueRow(app) {
+    return {
+        id: app.id,
+        auditNumber: app.applicationNumber,
+        applicationNumber: app.applicationNumber,
+        applicantName: applicantNameOf(app),
+        plantId: app.plantId || app.formData?.plantId || null,
+        areaType: app.areaType || null,
+        status: app.status === 'AUDIT_FEE_PAID' ? 'WAITING_SCHEDULE' : app.status,
+        scheduledDate: app.scheduledDate || null,
+        auditorId: app.auditorId || app.headAuditorId || null,
+        auditorName: auditorNameOf(app),
+        auditMode: app.formData?.auditMode || 'ONSITE',
+    };
+}
+
 router.get('/', authenticateProvider, async (req, res) => {
     try {
         const applications = await applicationService.listAuditQueue({
@@ -105,28 +156,14 @@ router.get('/', authenticateProvider, async (req, res) => {
             take: 100,
         });
 
-        // Map to frontend "Audit" interface explicitly if needed, but standard return is fine
-        // Frontend expects: { id, applicationId, applicantName, plantType, status, scheduledDate, inspector }
-        const data = applications.map(app => ({
-            id: app.id,
-            auditNumber: app.applicationNumber, // Map App No to Audit No for display
-            applicationId: app.applicationNumber,
-            applicantName: 'N/A', // We need to fetch User/Applicant name!
-            plantType: app.areaType || 'Unknown',
-            status: app.status === 'AUDIT_FEE_PAID' ? 'WAITING_SCHEDULE' : app.status, // Map status to frontend expectation
-            scheduledDate: app.scheduledDate,
-            inspector: app.auditorId,
-            auditMode: app.formData?.auditMode || 'ONSITE', // [NEW] Return audit mode
-        }));
+        const data = applications.map(auditQueueRow);
 
-        // We need to fetch Applicant Names. 
-        // Optimized: fetching all users is bad.
-        // Let's use include: { applicant: true }
-
-        res.json({ success: true, data: { audits: data } });
+        // ซองเดียวกับรายการอื่นทั้งระบบ: data เป็น array ตรง ๆ พร้อม count
+        // เดิมห่อไว้เป็น { audits: [...] } อยู่ประตูเดียว
+        res.json({ success: true, count: data.length, data });
     } catch (error) {
         logger.error('[Audit] list error:', error);
-        res.status(500).json({ success: false, data: { audits: [] } });
+        return respondError(res, req, error);
     }
 });
 
@@ -145,10 +182,13 @@ router.get('/', authenticateProvider, async (req, res) => {
 router.get('/pending-schedule', authenticateProvider, async (req, res) => {
     try {
         const applications = await applicationService.listPendingScheduleAudits({ take: 50 });
-        res.json({ success: true, data: applications });
+        const data = applications.map(auditQueueRow);
+        res.json({ success: true, count: data.length, data });
     } catch (error) {
+        // เดิมตอบ { success: true, data: [] } — ฐานข้อมูลล่มแล้วคนจัดคิวอ่านว่า
+        // "ไม่มีคิวรอ" · คิวที่ว่างเพราะระบบพัง กับคิวที่ว่างจริง ต้องแยกจากกันได้
         logger.error('[Audit] getPendingSchedule error:', error);
-        res.json({ success: true, data: [] });
+        return respondError(res, req, error);
     }
 });
 
@@ -157,10 +197,12 @@ router.get('/scheduled', authenticateProvider, async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
         const audits = await applicationService.listScheduledAudits({ startDate, endDate, take: 100 });
-        res.json({ success: true, data: audits });
+        const data = audits.map(auditQueueRow);
+        res.json({ success: true, count: data.length, data });
     } catch (error) {
+        // เหตุผลเดียวกับ /pending-schedule: ปฏิทินที่ว่างเพราะ query พัง ไม่ใช่ปฏิทินว่าง
         logger.error('[Audit] getScheduled error:', error);
-        res.json({ success: true, data: [] });
+        return respondError(res, req, error);
     }
 });
 
@@ -213,15 +255,19 @@ router.get('/:id', authenticateProvider, async (req, res) => {
             id: application.id,
             auditNumber: application.applicationNumber,
             applicationNumber: application.applicationNumber,
-            applicantName: application.applicant ? `${application.applicant.firstName} ${application.applicant.lastName}` : 'Unknown',
-            plantType: application.formData?.plantId || application.areaType || '-',
+            applicantName: applicantNameOf(application),
+            // แยกสองเรื่องออกจากกัน เดิม plantType รับ areaType เป็นค่าสำรอง
+            plantId: application.plantId || application.formData?.plantId || null,
+            areaType: application.areaType || null,
             auditMode: application.formData?.auditMode || 'ONSITE',
             status: application.status,
             scheduledDate: application.scheduledDate,
             scheduledTime: application.scheduledDate ? new Date(application.scheduledDate).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '',
-            responses: application.formData?.auditChecklist || [], // Use existing checklist if any
-            // Mock Template Code if not present
-            templateCode: 'GAP-001',
+            responses: application.formData?.auditChecklist || [],
+            // เดิมเป็น 'GAP-001' ติดมากับคำตอบทุกใบพร้อมคอมเมนต์ว่า Mock — รหัสแม่แบบ
+            // ที่ไม่ได้มาจากใบนั้นจริง คือข้อมูลผิดที่ดูเหมือนข้อมูลถูก · แม่แบบจริงผูกกับ
+            // มาตรฐานของคำขอ ถ้าใบไหนยังไม่มีก็คือยังไม่มี
+            templateCode: application.standardCode || null,
         };
 
         res.json({ success: true, data: auditDetail });

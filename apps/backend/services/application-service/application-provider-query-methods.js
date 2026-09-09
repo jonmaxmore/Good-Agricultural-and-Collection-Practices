@@ -250,6 +250,18 @@ function createApplicationProviderQueryMethods({ prisma }) {
                     status: { in: statusIn },
                     isDeleted: false,
                 },
+            // ชื่อผู้ยื่นต้องมากับแถว ไม่ใช่ให้ประตูเดาเอง · ประตูรายละเอียด
+            // (/api/audits/:id) ดึงมาถูกอยู่แล้ว ประตูรายการจึงเคยโชว์ 'N/A' ทั้งที่
+            // ข้อมูลอยู่ห่างไป include เดียว
+            // entity มาก่อน person: นิติบุคคลถือใบรับรองในชื่อของตัวเอง
+            include: {
+                applicant: { select: { firstName: true, lastName: true } },
+                entity: { select: { displayName: true, type: true } },
+                // auditorId คือคอลัมน์ผู้รับมอบหมายตัวจริง (routes/api/provider/
+                // applications.js:488 "canonical assignee") · headAuditor เป็นคนละบทบาท
+                auditor: { select: { firstName: true, lastName: true } },
+                headAuditor: { select: { firstName: true, lastName: true } },
+            },
                 orderBy: { createdAt: 'desc' },
                 take,
             });
@@ -264,6 +276,18 @@ function createApplicationProviderQueryMethods({ prisma }) {
                     status: { in: ['AUDIT_FEE_PAID'] },
                     isDeleted: false,
                 },
+            // ชื่อผู้ยื่นต้องมากับแถว ไม่ใช่ให้ประตูเดาเอง · ประตูรายละเอียด
+            // (/api/audits/:id) ดึงมาถูกอยู่แล้ว ประตูรายการจึงเคยโชว์ 'N/A' ทั้งที่
+            // ข้อมูลอยู่ห่างไป include เดียว
+            // entity มาก่อน person: นิติบุคคลถือใบรับรองในชื่อของตัวเอง
+            include: {
+                applicant: { select: { firstName: true, lastName: true } },
+                entity: { select: { displayName: true, type: true } },
+                // auditorId คือคอลัมน์ผู้รับมอบหมายตัวจริง (routes/api/provider/
+                // applications.js:488 "canonical assignee") · headAuditor เป็นคนละบทบาท
+                auditor: { select: { firstName: true, lastName: true } },
+                headAuditor: { select: { firstName: true, lastName: true } },
+            },
                 orderBy: { createdAt: 'asc' },
                 take,
             });
@@ -286,6 +310,18 @@ function createApplicationProviderQueryMethods({ prisma }) {
             }
             return prisma.application.findMany({
                 where,
+            // ชื่อผู้ยื่นต้องมากับแถว ไม่ใช่ให้ประตูเดาเอง · ประตูรายละเอียด
+            // (/api/audits/:id) ดึงมาถูกอยู่แล้ว ประตูรายการจึงเคยโชว์ 'N/A' ทั้งที่
+            // ข้อมูลอยู่ห่างไป include เดียว
+            // entity มาก่อน person: นิติบุคคลถือใบรับรองในชื่อของตัวเอง
+            include: {
+                applicant: { select: { firstName: true, lastName: true } },
+                entity: { select: { displayName: true, type: true } },
+                // auditorId คือคอลัมน์ผู้รับมอบหมายตัวจริง (routes/api/provider/
+                // applications.js:488 "canonical assignee") · headAuditor เป็นคนละบทบาท
+                auditor: { select: { firstName: true, lastName: true } },
+                headAuditor: { select: { firstName: true, lastName: true } },
+            },
                 orderBy: { scheduledDate: 'asc' },
                 take,
             });
